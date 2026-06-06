@@ -11,10 +11,16 @@ export default async function handler(req) {
   const messages = body.messages || []
   const systemPrompt = body.system || ''
 
-  const contents = messages.map(m => ({
+  // تأكد أن contents ليس فارغاً
+  let contents = messages.map(m => ({
     role: m.role === 'assistant' ? 'model' : 'user',
     parts: [{ text: m.content }]
   }))
+
+  // إذا فارغ أضف رسالة افتراضية
+  if (contents.length === 0) {
+    contents = [{ role: 'user', parts: [{ text: 'مرحبا' }] }]
+  }
 
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`,
@@ -29,7 +35,11 @@ export default async function handler(req) {
   )
 
   const data = await res.json()
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || 'عذراً، حدث خطأ.'
+  console.log('Gemini response:', JSON.stringify(data))
+  
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || 
+               data.error?.message || 
+               'عذراً، حدث خطأ.'
 
   return new Response(JSON.stringify({
     content: [{ text }]
