@@ -5,7 +5,6 @@ const ROBOFLOW_WS    = import.meta.env.VITE_ROBOFLOW_WORKSPACE
 const ROBOFLOW_MODEL = import.meta.env.VITE_ROBOFLOW_MODEL
 const ROBOFLOW_VER   = import.meta.env.VITE_ROBOFLOW_VERSION
 const WEATHER_KEY    = import.meta.env.VITE_OPENWEATHER_KEY
-const ANTHROPIC_KEY  = import.meta.env.VITE_ANTHROPIC_KEY
 
 export async function diagnosePlant(imageBase64) {
   try {
@@ -46,12 +45,10 @@ export async function getWeather(lat = 32.5, lon = 44.4) {
 
 export async function askAssistant(message, history = []) {
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('/api/chat', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': ANTHROPIC_KEY,
-        'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
