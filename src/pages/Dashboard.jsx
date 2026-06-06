@@ -26,6 +26,7 @@ const PROVINCE_COORDS = {
 export default function Dashboard({ showNotif }) {
   const [weather, setWeather] = useState(null)
   const [crops,   setCrops]   = useState([])
+  const [province, setProvince] = useState(null)
 
   useEffect(() => {
     loadWeather()
@@ -33,7 +34,6 @@ export default function Dashboard({ showNotif }) {
   }, [])
 
   const loadWeather = async () => {
-    // جلب المحافظة من قاعدة البيانات
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
       const { data: userData } = await supabase
@@ -43,13 +43,13 @@ export default function Dashboard({ showNotif }) {
         .single()
 
       if (userData?.province && PROVINCE_COORDS[userData.province]) {
+        setProvince(userData.province)
         const { lat, lon } = PROVINCE_COORDS[userData.province]
         const r = await getWeather(lat, lon)
         if (r.success) { setWeather(r.data); return }
       }
     }
 
-    // fallback — GPS أو بغداد
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         pos => getWeather(pos.coords.latitude, pos.coords.longitude).then(r => { if(r.success) setWeather(r.data) }),
@@ -85,7 +85,9 @@ export default function Dashboard({ showNotif }) {
           <span style={{ fontSize:44 }}>{weather.temp>35?'☀️':weather.temp>20?'⛅':'🌤️'}</span>
           <div style={{ flex:1 }}>
             <div style={{ fontSize:38, fontWeight:900 }}>{weather.temp}°م</div>
-            <div style={{ color:'#65C285', fontSize:12, marginTop:3 }}>📍 {weather.city}</div>
+            <div style={{ color:'#65C285', fontSize:12, marginTop:3 }}>
+              📍 محافظة {province || weather.city}
+            </div>
             <div style={{ display:'flex', gap:14, marginTop:8 }}>
               <span style={{ fontSize:10, color:'#A8DFC0', opacity:.7 }}>💧 {weather.humidity}%</span>
               <span style={{ fontSize:10, color:'#A8DFC0', opacity:.7 }}>💨 {weather.wind_speed} كم/س</span>
