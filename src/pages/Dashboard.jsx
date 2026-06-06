@@ -2,21 +2,63 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { getWeather } from '../lib/api'
 
+const PROVINCE_COORDS = {
+  'بغداد':       { lat: 33.3152, lon: 44.3661 },
+  'البصرة':      { lat: 30.5085, lon: 47.7804 },
+  'نينوى':       { lat: 36.3350, lon: 43.1189 },
+  'أربيل':       { lat: 36.1901, lon: 44.0091 },
+  'النجف':       { lat: 31.9904, lon: 44.3168 },
+  'كربلاء':      { lat: 32.6158, lon: 44.0244 },
+  'بابل':        { lat: 32.4720, lon: 44.4220 },
+  'واسط':        { lat: 32.5418, lon: 45.8158 },
+  'ذي قار':      { lat: 31.0461, lon: 46.2760 },
+  'المثنى':      { lat: 31.3257, lon: 45.2857 },
+  'القادسية':    { lat: 31.9926, lon: 44.9269 },
+  'ميسان':       { lat: 31.8326, lon: 47.1506 },
+  'ديالى':       { lat: 33.7691, lon: 44.9228 },
+  'الأنبار':     { lat: 33.4058, lon: 43.3000 },
+  'صلاح الدين':  { lat: 34.5337, lon: 43.4836 },
+  'كركوك':       { lat: 35.4681, lon: 44.3922 },
+  'السليمانية':  { lat: 35.5572, lon: 45.4329 },
+  'دهوك':        { lat: 36.8669, lon: 42.9903 },
+}
+
 export default function Dashboard({ showNotif }) {
   const [weather, setWeather] = useState(null)
   const [crops,   setCrops]   = useState([])
 
   useEffect(() => {
-    if (navigator.geolocation) {
-  navigator.geolocation.getCurrentPosition(
-    pos => getWeather(pos.coords.latitude, pos.coords.longitude).then(r => { if(r.success) setWeather(r.data) }),
-    () => getWeather(32.5, 44.4).then(r => { if(r.success) setWeather(r.data) })
-  )
-} else {
-  getWeather(32.5, 44.4).then(r => { if(r.success) setWeather(r.data) })
-}
+    loadWeather()
     supabase.from('crops').select('*').limit(5).then(({ data }) => setCrops(data||[]))
   }, [])
+
+  const loadWeather = async () => {
+    // جلب المحافظة من قاعدة البيانات
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      const { data: userData } = await supabase
+        .from('users')
+        .select('province')
+        .eq('auth_id', user.id)
+        .single()
+
+      if (userData?.province && PROVINCE_COORDS[userData.province]) {
+        const { lat, lon } = PROVINCE_COORDS[userData.province]
+        const r = await getWeather(lat, lon)
+        if (r.success) { setWeather(r.data); return }
+      }
+    }
+
+    // fallback — GPS أو بغداد
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        pos => getWeather(pos.coords.latitude, pos.coords.longitude).then(r => { if(r.success) setWeather(r.data) }),
+        () => getWeather(33.3152, 44.3661).then(r => { if(r.success) setWeather(r.data) })
+      )
+    } else {
+      getWeather(33.3152, 44.3661).then(r => { if(r.success) setWeather(r.data) })
+    }
+  }
 
   const stats = [
     { i:'🌾', n: crops.length || 0, l:'محاصيل نشطة',    bg:'#1e5c38,#132a1a' },
