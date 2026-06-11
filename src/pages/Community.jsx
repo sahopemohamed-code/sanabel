@@ -20,10 +20,10 @@ export default function Community({ showNotif }) {
   const [selExp,  setSelExp]  = useState(null)
   const [reqMsg,  setReqMsg]  = useState('')
   const [tab,     setTab]     = useState('posts')
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024)
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768)
+    const handleResize = () => setIsMobile(window.innerWidth < 1024)
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
@@ -164,7 +164,6 @@ export default function Community({ showNotif }) {
         <div style={{ fontSize:12, color:'#65C285', opacity:.6, marginTop:4 }}>تبادل الخبرات مع المزارعين العراقيين</div>
       </div>
 
-      {/* Tabs للهاتف فقط */}
       {isMobile && (
         <div style={{ display:'flex', gap:8, marginBottom:16 }}>
           {[['posts','المنشورات'],['experts','الخبراء']].map(([t,l]) => (
@@ -191,7 +190,6 @@ export default function Community({ showNotif }) {
         </div>
       )}
 
-      {/* Request Modal */}
       {showReq && selExp && (
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.7)',
           display:'flex', alignItems:'center', justifyContent:'center', zIndex:300,

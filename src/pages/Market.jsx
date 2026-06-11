@@ -22,10 +22,10 @@ export default function Market({ showNotif }) {
   const [tab, setTab] = useState('browse')
   const [listings, setListings] = useState([])
   const [form, setForm] = useState({ crop_type:'حنطة', quantity:'', price_per_unit:'', province:'بابل' })
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024)
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768)
+    const handleResize = () => setIsMobile(window.innerWidth < 1024)
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
@@ -51,7 +51,6 @@ export default function Market({ showNotif }) {
         <div style={{ fontSize:12, color:'#65C285', opacity:.6, marginTop:4 }}>أسعار لحظية وبيع مباشر</div>
       </div>
 
-      {/* ملاحظة الأسعار */}
       <div style={{ marginBottom:14, padding:'10px 14px',
         background:'rgba(212,168,50,.1)', border:'1px solid rgba(212,168,50,.35)',
         borderRadius:10, display:'flex', alignItems:'flex-start', gap:8 }}>
@@ -61,7 +60,6 @@ export default function Market({ showNotif }) {
         </span>
       </div>
 
-      {/* Ticker */}
       <div style={{ background:'rgba(10,26,13,.7)', border:'1px solid rgba(101,194,133,.12)',
         borderRadius:12, padding:'10px 16px', marginBottom:16, overflow:'hidden' }}>
         <div style={{ display:'flex', gap:24, animation:'ticker 22s linear infinite', width:'max-content' }}>
@@ -78,7 +76,6 @@ export default function Market({ showNotif }) {
         </div>
       </div>
 
-      {/* Tabs */}
       <div style={{ display:'flex', gap:8, marginBottom:16 }}>
         {[['browse','تصفح العروض'],['sell','بيع محصولك'],['prices','الأسعار']].map(([t,l]) => (
           <button key={t} onClick={() => setTab(t)}
@@ -97,7 +94,6 @@ export default function Market({ showNotif }) {
         <div>
           {(listings.length ? listings : LISTINGS).map((l,i) => (
             <div key={i} style={{ ...S.card }}>
-              {/* الهاتف — تصميم عمودي */}
               {isMobile ? (
                 <>
                   <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:12 }}>
@@ -128,7 +124,6 @@ export default function Market({ showNotif }) {
                   </div>
                 </>
               ) : (
-                /* الحاسوب — تصميم أفقي */
                 <div style={{ display:'flex', alignItems:'center', gap:14 }}>
                   <div style={{ width:46, height:46, background:'rgba(30,92,56,.2)',
                     borderRadius:12, display:'flex', alignItems:'center',

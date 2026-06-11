@@ -12,17 +12,16 @@ const NAV = [
 ]
 
 export default function Sidebar({ currentPage, onNavigate }) {
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024)
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef(null)
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768)
+    const handleResize = () => setIsMobile(window.innerWidth < 1024)
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
-  // إغلاق القائمة عند الضغط خارجها
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
@@ -41,7 +40,6 @@ export default function Sidebar({ currentPage, onNavigate }) {
 
   if (isMobile) return (
     <>
-      {/* شريط علوي */}
       <div style={{ position:'fixed', top:0, right:0, left:0, zIndex:200,
         background:'linear-gradient(180deg,#0c1e11,#091508)',
         borderBottom:'1px solid rgba(101,194,133,.12)',
@@ -63,7 +61,6 @@ export default function Sidebar({ currentPage, onNavigate }) {
         </button>
       </div>
 
-      {/* قائمة منسدلة */}
       {menuOpen && (
         <div ref={menuRef} style={{ position:'fixed', top:56, right:0, left:0, zIndex:199,
           background:'#0c1e11', borderBottom:'1px solid rgba(101,194,133,.12)',
@@ -83,7 +80,6 @@ export default function Sidebar({ currentPage, onNavigate }) {
         </div>
       )}
 
-      {/* شريط تنقل سفلي */}
       <div style={{ position:'fixed', bottom:0, right:0, left:0, zIndex:200,
         background:'linear-gradient(0deg,#0c1e11,#091508)',
         borderTop:'1px solid rgba(101,194,133,.12)',
@@ -103,7 +99,6 @@ export default function Sidebar({ currentPage, onNavigate }) {
     </>
   )
 
-  // شريط جانبي للحاسوب
   return (
     <aside style={{ width:220, background:'linear-gradient(180deg,#0c1e11,#091508)',
       borderLeft:'1px solid rgba(101,194,133,.12)', display:'flex', flexDirection:'column',

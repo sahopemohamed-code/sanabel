@@ -104,10 +104,10 @@ const DAYS = ['ح','ن','ث','ر','خ','ج','س']
 export default function Calendar() {
   const curMonth = new Date().toLocaleString('ar',{month:'long'})
   const [selected, setSelected] = useState(MONTHS.find(m=>m===curMonth)||MONTHS[3])
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024)
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768)
+    const handleResize = () => setIsMobile(window.innerWidth < 1024)
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
@@ -123,7 +123,6 @@ export default function Calendar() {
         <div style={{ fontSize:12, color:'#65C285', opacity:.6, marginTop:4 }}>مواعيد الزراعة والعناية — 29 محصول</div>
       </div>
 
-      {/* Month tabs */}
       <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:16 }}>
         {MONTHS.map(m => (
           <button key={m} onClick={() => setSelected(m)}
@@ -141,7 +140,6 @@ export default function Calendar() {
         gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
         gap: isMobile ? 14 : 18 }}>
 
-        {/* Calendar Grid — يظهر فقط على الحاسوب */}
         {!isMobile && (
           <div style={{ background:'rgba(19,42,26,.65)', border:'1px solid rgba(101,194,133,.12)', borderRadius:16, padding:18 }}>
             <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', gap:3, marginBottom:8 }}>
@@ -172,7 +170,6 @@ export default function Calendar() {
           </div>
         )}
 
-        {/* Events */}
         <div>
           <div style={{ fontSize:11, fontWeight:700, color:'#65C285',
             letterSpacing:2, marginBottom:12, display:'flex', alignItems:'center', gap:7 }}>

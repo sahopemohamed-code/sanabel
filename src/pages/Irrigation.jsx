@@ -14,10 +14,10 @@ export default function Irrigation({ showNotif }) {
     cropType:'حنطة', soilType:'طمي', season:'صيف', stage:'نمو خضري', area:10
   })
   const [result, setResult] = useState(null)
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024)
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768)
+    const handleResize = () => setIsMobile(window.innerWidth < 1024)
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
@@ -39,7 +39,6 @@ export default function Irrigation({ showNotif }) {
         gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
         gap: isMobile ? 16 : 20 }}>
 
-        {/* Form */}
         <div style={S.card}>
           {[
             ['نوع المحصول','cropType',['حنطة','طماطم','خيار','نخيل','شعير','ذرة','باذنجان','بطاطا','بصل','فلفل','رقي','بطيخ','تفاح','رمان','عنب','تين','مشمش','برتقال','ليمون','فراولة','فلفل حار','كوسا','لوبياء','بازلاء','عدس','حمص','سمسم','زيتون','قطن']],
@@ -71,7 +70,6 @@ export default function Irrigation({ showNotif }) {
           </button>
         </div>
 
-        {/* Result */}
         <div>
           {!result ? (
             <div style={{ display:'flex', flexDirection:'column', alignItems:'center',

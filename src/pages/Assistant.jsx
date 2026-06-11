@@ -7,11 +7,11 @@ export default function Assistant({ showNotif }) {
   const [msgs, setMsgs]    = useState([{r:'bot',t:'مرحباً! 🌾 أنا مساعدك الزراعي الذكي.\n\nاسألني عن زراعتك — المحاصيل، الأمراض، الري، التسميد!'}])
   const [inp,  setInp]     = useState('')
   const [loading, setLoad] = useState(false)
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024)
   const endRef = useRef(null)
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768)
+    const handleResize = () => setIsMobile(window.innerWidth < 1024)
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
@@ -46,8 +46,7 @@ export default function Assistant({ showNotif }) {
         <div style={{ fontSize:12, color:'#65C285', opacity:.6, marginTop:4 }}>اسألني بالعربية أو العامية العراقية</div>
       </div>
 
-      {/* Quick questions */}
-      <div style={{ display:'flex', gap:7, flexWrap:'wrap', marginBottom:10,
+      <div style={{ display:'flex', gap:7, marginBottom:10,
         overflowX: isMobile ? 'auto' : 'visible',
         flexWrap: isMobile ? 'nowrap' : 'wrap',
         paddingBottom: isMobile ? 4 : 0 }}>
@@ -63,7 +62,6 @@ export default function Assistant({ showNotif }) {
         ))}
       </div>
 
-      {/* Messages */}
       <div style={{ flex:1, overflow:'auto', background:'rgba(19,42,26,.5)',
         border:'1px solid rgba(101,194,133,.1)', borderRadius:16,
         padding: isMobile ? 12 : 16,
@@ -107,7 +105,6 @@ export default function Assistant({ showNotif }) {
         <div ref={endRef}/>
       </div>
 
-      {/* Input */}
       <div style={{ display:'flex', gap:8 }}>
         <input value={inp} onChange={e=>setInp(e.target.value)}
           onKeyDown={e=>e.key==='Enter'&&send()}

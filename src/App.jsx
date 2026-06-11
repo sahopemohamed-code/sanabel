@@ -18,10 +18,10 @@ export default function App() {
   const [loading, setLoad]      = useState(true)
   const [notif, setNotif]       = useState(null)
   const [isExpert, setIsExpert] = useState(false)
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024)
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768)
+    const handleResize = () => setIsMobile(window.innerWidth < 1024)
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
@@ -94,3 +94,4 @@ export default function App() {
       {notif && <Notification {...notif} />}
     </div>
   )
+}

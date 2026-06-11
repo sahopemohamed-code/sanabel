@@ -38,10 +38,10 @@ export default function Diagnosis({ showNotif }) {
   const [result,   setResult]   = useState(null)
   const [loading,  setLoading]  = useState(false)
   const [conf,     setConf]     = useState(0)
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024)
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768)
+    const handleResize = () => setIsMobile(window.innerWidth < 1024)
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
@@ -83,7 +83,6 @@ export default function Diagnosis({ showNotif }) {
         gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
         gap: isMobile ? 16 : 20 }}>
 
-        {/* Upload */}
         <div>
           <div style={S.sec}>
             <div style={{ width:3,height:14,background:'#38A05F',borderRadius:2 }}/>رفع صورة
@@ -128,7 +127,6 @@ export default function Diagnosis({ showNotif }) {
           </div>
         </div>
 
-        {/* Result */}
         <div>
           <div style={S.sec}>
             <div style={{ width:3,height:14,background:'#38A05F',borderRadius:2 }}/>نتيجة التشخيص

@@ -27,10 +27,10 @@ export default function Dashboard({ showNotif }) {
   const [weather,  setWeather]  = useState(null)
   const [crops,    setCrops]    = useState([])
   const [province, setProvince] = useState(null)
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024)
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768)
+    const handleResize = () => setIsMobile(window.innerWidth < 1024)
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
@@ -79,7 +79,6 @@ export default function Dashboard({ showNotif }) {
   return (
     <div style={{ padding: isMobile ? '16px 12px 20px' : '24px 24px 60px' }}>
 
-      {/* Weather */}
       {weather && (
         <div style={{ background:'linear-gradient(135deg,rgba(19,42,26,.9),rgba(10,26,13,.9))',
           border:'1px solid rgba(101,194,133,.18)', borderRadius:18, padding: isMobile ? 14 : 20,
@@ -104,7 +103,6 @@ export default function Dashboard({ showNotif }) {
         </div>
       )}
 
-      {/* Stats */}
       <div style={{ display:'grid',
         gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)',
         gap: isMobile ? 10 : 14, marginBottom:16 }}>
@@ -118,12 +116,10 @@ export default function Dashboard({ showNotif }) {
         ))}
       </div>
 
-      {/* محاصيل + تنبيهات */}
       <div style={{ display:'grid',
         gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
         gap: isMobile ? 12 : 18 }}>
 
-        {/* Crops */}
         <div>
           <div style={{ fontSize:11, fontWeight:700, color:'#65C285',
             letterSpacing:2, marginBottom:12, display:'flex', alignItems:'center', gap:7 }}>
@@ -153,7 +149,6 @@ export default function Dashboard({ showNotif }) {
           ))}
         </div>
 
-        {/* Activity */}
         <div>
           <div style={{ fontSize:11, fontWeight:700, color:'#65C285',
             letterSpacing:2, marginBottom:12, display:'flex', alignItems:'center', gap:7 }}>
