@@ -94,4 +94,3 @@ export default function App() {
       {notif && <Notification {...notif} />}
     </div>
   )
-}

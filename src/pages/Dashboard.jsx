@@ -24,9 +24,16 @@ const PROVINCE_COORDS = {
 }
 
 export default function Dashboard({ showNotif }) {
-  const [weather, setWeather] = useState(null)
-  const [crops,   setCrops]   = useState([])
+  const [weather,  setWeather]  = useState(null)
+  const [crops,    setCrops]    = useState([])
   const [province, setProvince] = useState(null)
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   useEffect(() => {
     loadWeather()
@@ -37,11 +44,7 @@ export default function Dashboard({ showNotif }) {
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
       const { data: userData } = await supabase
-        .from('users')
-        .select('province')
-        .eq('auth_id', user.id)
-        .single()
-
+        .from('users').select('province').eq('auth_id', user.id).single()
       if (userData?.province && PROVINCE_COORDS[userData.province]) {
         setProvince(userData.province)
         const { lat, lon } = PROVINCE_COORDS[userData.province]
@@ -49,7 +52,6 @@ export default function Dashboard({ showNotif }) {
         if (r.success) { setWeather(r.data); return }
       }
     }
-
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         pos => getWeather(pos.coords.latitude, pos.coords.longitude).then(r => { if(r.success) setWeather(r.data) }),
@@ -68,34 +70,34 @@ export default function Dashboard({ showNotif }) {
   ]
 
   const acts = [
-    { i:'🦠', t:'صدأ أصفر — حقل الحنطة', d:'منذ ساعتين', c:'#ef4444' },
+    { i:'🦠', t:'صدأ أصفر — حقل الحنطة', d:'منذ ساعتين',   c:'#ef4444' },
     { i:'💧', t:'تم ري حقل الشمال',       d:'اليوم 5:30 ص', c:'#22c55e' },
-    { i:'🛒', t:'طلب شراء طماطم',          d:'أمس — بغداد', c:'#3b82f6' },
-    { i:'💊', t:'موعد التسميد غداً',       d:'7:00 ص',      c:'#e8b84b' },
+    { i:'🛒', t:'طلب شراء طماطم',          d:'أمس — بغداد',  c:'#3b82f6' },
+    { i:'💊', t:'موعد التسميد غداً',       d:'7:00 ص',       c:'#e8b84b' },
   ]
 
   return (
-    <div style={{ padding:'24px 24px 60px' }}>
+    <div style={{ padding: isMobile ? '16px 12px 20px' : '24px 24px 60px' }}>
 
       {/* Weather */}
       {weather && (
         <div style={{ background:'linear-gradient(135deg,rgba(19,42,26,.9),rgba(10,26,13,.9))',
-          border:'1px solid rgba(101,194,133,.18)', borderRadius:18, padding:20,
-          display:'flex', alignItems:'center', gap:16, marginBottom:22 }}>
-          <span style={{ fontSize:44 }}>{weather.temp>35?'☀️':weather.temp>20?'⛅':'🌤️'}</span>
+          border:'1px solid rgba(101,194,133,.18)', borderRadius:18, padding: isMobile ? 14 : 20,
+          display:'flex', alignItems:'center', gap:12, marginBottom:16 }}>
+          <span style={{ fontSize: isMobile ? 36 : 44 }}>{weather.temp>35?'☀️':weather.temp>20?'⛅':'🌤️'}</span>
           <div style={{ flex:1 }}>
-            <div style={{ fontSize:38, fontWeight:900 }}>{weather.temp}°م</div>
+            <div style={{ fontSize: isMobile ? 30 : 38, fontWeight:900 }}>{weather.temp}°م</div>
             <div style={{ color:'#65C285', fontSize:12, marginTop:3 }}>
               📍 محافظة {province || weather.city}
             </div>
-            <div style={{ display:'flex', gap:14, marginTop:8 }}>
+            <div style={{ display:'flex', gap:14, marginTop:8, flexWrap:'wrap' }}>
               <span style={{ fontSize:10, color:'#A8DFC0', opacity:.7 }}>💧 {weather.humidity}%</span>
               <span style={{ fontSize:10, color:'#A8DFC0', opacity:.7 }}>💨 {weather.wind_speed} كم/س</span>
             </div>
           </div>
           {weather.temp>38 && (
             <div style={{ background:'rgba(230,126,34,.15)', border:'1px solid rgba(230,126,34,.3)',
-              borderRadius:10, padding:'8px 12px', fontSize:10, color:'#fcd9a0' }}>
+              borderRadius:10, padding:'6px 10px', fontSize:10, color:'#fcd9a0', textAlign:'center' }}>
               ⚠️ حرارة عالية
             </div>
           )}
@@ -103,38 +105,42 @@ export default function Dashboard({ showNotif }) {
       )}
 
       {/* Stats */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:22 }}>
+      <div style={{ display:'grid',
+        gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)',
+        gap: isMobile ? 10 : 14, marginBottom:16 }}>
         {stats.map(s => (
           <div key={s.l} style={{ background:`linear-gradient(135deg,#${s.bg})`,
-            borderRadius:14, padding:16, position:'relative', overflow:'hidden' }}>
-            <div style={{ fontSize:24, marginBottom:6 }}>{s.i}</div>
-            <div style={{ fontSize:24, fontWeight:900 }}>{s.n}</div>
-            <div style={{ fontSize:10, opacity:.7, marginTop:3 }}>{s.l}</div>
+            borderRadius:14, padding: isMobile ? 12 : 16 }}>
+            <div style={{ fontSize: isMobile ? 20 : 24, marginBottom:4 }}>{s.i}</div>
+            <div style={{ fontSize: isMobile ? 20 : 24, fontWeight:900 }}>{s.n}</div>
+            <div style={{ fontSize: isMobile ? 9 : 10, opacity:.7, marginTop:3 }}>{s.l}</div>
           </div>
         ))}
       </div>
 
-      {/* Two columns */}
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:18 }}>
+      {/* محاصيل + تنبيهات */}
+      <div style={{ display:'grid',
+        gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+        gap: isMobile ? 12 : 18 }}>
 
         {/* Crops */}
         <div>
           <div style={{ fontSize:11, fontWeight:700, color:'#65C285',
-            letterSpacing:2, marginBottom:14, display:'flex', alignItems:'center', gap:7 }}>
+            letterSpacing:2, marginBottom:12, display:'flex', alignItems:'center', gap:7 }}>
             <div style={{ width:3, height:14, background:'#38A05F', borderRadius:2 }}/>
             محاصيلي
           </div>
           {crops.length === 0 ? (
             <div style={{ background:'rgba(19,42,26,.5)', border:'1px solid rgba(101,194,133,.1)',
-              borderRadius:14, padding:30, textAlign:'center', color:'rgba(255,255,255,.2)' }}>
+              borderRadius:14, padding:24, textAlign:'center', color:'rgba(255,255,255,.2)' }}>
               <div style={{ fontSize:32, marginBottom:8 }}>🌱</div>
               <div>لا توجد محاصيل بعد</div>
             </div>
           ) : crops.map(c => (
             <div key={c.id} style={{ background:'rgba(19,42,26,.5)',
               border:'1px solid rgba(101,194,133,.1)', borderRadius:14,
-              padding:14, display:'flex', alignItems:'center', gap:10, marginBottom:10 }}>
-              <span style={{ fontSize:24 }}>🌾</span>
+              padding:12, display:'flex', alignItems:'center', gap:10, marginBottom:10 }}>
+              <span style={{ fontSize:22 }}>🌾</span>
               <div style={{ flex:1 }}>
                 <div style={{ fontWeight:700, fontSize:13, color:'#A8DFC0' }}>{c.name}</div>
                 <div style={{ fontSize:10, color:'#65C285', margin:'4px 0 3px' }}>{c.province}</div>
@@ -150,18 +156,18 @@ export default function Dashboard({ showNotif }) {
         {/* Activity */}
         <div>
           <div style={{ fontSize:11, fontWeight:700, color:'#65C285',
-            letterSpacing:2, marginBottom:14, display:'flex', alignItems:'center', gap:7 }}>
+            letterSpacing:2, marginBottom:12, display:'flex', alignItems:'center', gap:7 }}>
             <div style={{ width:3, height:14, background:'#38A05F', borderRadius:2 }}/>
             آخر التنبيهات
           </div>
           {acts.map(a => (
             <div key={a.t} style={{ background:'rgba(19,42,26,.4)',
-              borderRadius:12, padding:'11px 13px',
+              borderRadius:12, padding:'10px 12px',
               display:'flex', alignItems:'center', gap:10,
               borderRight:`3px solid ${a.c}`, marginBottom:9 }}>
-              <span style={{ fontSize:17 }}>{a.i}</span>
+              <span style={{ fontSize:16 }}>{a.i}</span>
               <div>
-                <div style={{ fontSize:11, fontWeight:700, color:'#A8DFC0' }}>{a.t}</div>
+                <div style={{ fontSize: isMobile ? 12 : 11, fontWeight:700, color:'#A8DFC0' }}>{a.t}</div>
                 <div style={{ fontSize:9, color:'#65C285', marginTop:2 }}>{a.d}</div>
               </div>
             </div>
