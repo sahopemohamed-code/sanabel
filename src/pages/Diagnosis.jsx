@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { diagnosePlant } from '../lib/api'
 import { supabase } from '../lib/supabase'
 
@@ -38,6 +38,13 @@ export default function Diagnosis({ showNotif }) {
   const [result,   setResult]   = useState(null)
   const [loading,  setLoading]  = useState(false)
   const [conf,     setConf]     = useState(0)
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   const runDiag = (type) => {
     setLoading(true); setResult(null); setConf(0)
@@ -64,31 +71,35 @@ export default function Diagnosis({ showNotif }) {
   }
 
   return (
-    <div style={{ padding:'24px 24px 60px' }}>
-      <div style={{ marginBottom:20 }}>
-        <div style={{ fontSize:22, fontWeight:700, color:'#A8DFC0' }}>تشخيص الأمراض 🔬</div>
+    <div style={{ padding: isMobile ? '16px 12px 20px' : '24px 24px 60px' }}>
+      <div style={{ marginBottom:16 }}>
+        <div style={{ fontSize: isMobile ? 18 : 22, fontWeight:700, color:'#A8DFC0' }}>تشخيص الأمراض 🔬</div>
         <div style={{ fontSize:12, color:'#65C285', opacity:.6, marginTop:4 }}>
           ارفع صورة النبات للحصول على تشخيص فوري
         </div>
       </div>
 
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:20 }}>
+      <div style={{ display:'grid',
+        gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+        gap: isMobile ? 16 : 20 }}>
 
         {/* Upload */}
         <div>
-          <div style={S.sec}><div style={{ width:3,height:14,background:'#38A05F',borderRadius:2 }}/>رفع صورة</div>
+          <div style={S.sec}>
+            <div style={{ width:3,height:14,background:'#38A05F',borderRadius:2 }}/>رفع صورة
+          </div>
           <div style={{ border:'2px dashed rgba(101,194,133,.3)', borderRadius:18,
-            padding:36, textAlign:'center', cursor:'pointer',
+            padding: isMobile ? 24 : 36, textAlign:'center', cursor:'pointer',
             background:'rgba(19,42,26,.3)', position:'relative', marginBottom:14 }}
             onClick={() => document.getElementById('fi').click()}>
             <input id="fi" type="file" accept="image/*" style={{ display:'none' }} onChange={handleFile}/>
             {preview ? (
-              <img src={preview} style={{ width:'100%', maxHeight:180,
+              <img src={preview} style={{ width:'100%', maxHeight: isMobile ? 200 : 180,
                 objectFit:'cover', borderRadius:10 }}/>
             ) : (
               <>
-                <div style={{ fontSize:40, marginBottom:10 }}>📸</div>
-                <div style={{ fontSize:15, fontWeight:700, color:'#A8DFC0' }}>صوّر النبات</div>
+                <div style={{ fontSize: isMobile ? 48 : 40, marginBottom:10 }}>📸</div>
+                <div style={{ fontSize: isMobile ? 16 : 15, fontWeight:700, color:'#A8DFC0' }}>صوّر النبات</div>
                 <div style={{ fontSize:11, color:'#65C285', opacity:.5, marginTop:4 }}>اضغط لرفع صورة</div>
               </>
             )}
@@ -97,8 +108,9 @@ export default function Diagnosis({ showNotif }) {
           {preview && (
             <button onClick={() => runDiag('rust')}
               style={{ width:'100%', background:'linear-gradient(135deg,#38A05F,#2A6E47)',
-                color:'#fff', border:'none', borderRadius:12, padding:13,
-                fontFamily:'Tajawal,sans-serif', fontSize:14, fontWeight:700,
+                color:'#fff', border:'none', borderRadius:12,
+                padding: isMobile ? 16 : 13,
+                fontFamily:'Tajawal,sans-serif', fontSize: isMobile ? 16 : 14, fontWeight:700,
                 cursor:'pointer', marginBottom:16 }}>
               🔬 تشخيص الآن
             </button>
@@ -107,10 +119,10 @@ export default function Diagnosis({ showNotif }) {
           <div style={{ fontSize:11, color:'#65C285', opacity:.5, marginBottom:10 }}>أمثلة تجريبية:</div>
           <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8 }}>
             {[['rust','🌾','صدأ'],['blight','🍅','لفحة'],['healthy','🌿','سليم']].map(([k,e,l]) => (
-              <div key={k} style={{ ...S.card, padding:12, textAlign:'center', cursor:'pointer' }}
+              <div key={k} style={{ ...S.card, padding: isMobile ? 14 : 12, textAlign:'center', cursor:'pointer' }}
                 onClick={() => { setPreview(k); runDiag(k) }}>
-                <div style={{ fontSize:22, marginBottom:5 }}>{e}</div>
-                <div style={{ fontSize:10, color:'#A8DFC0', fontWeight:700 }}>{l}</div>
+                <div style={{ fontSize: isMobile ? 28 : 22, marginBottom:5 }}>{e}</div>
+                <div style={{ fontSize: isMobile ? 11 : 10, color:'#A8DFC0', fontWeight:700 }}>{l}</div>
               </div>
             ))}
           </div>
@@ -118,11 +130,13 @@ export default function Diagnosis({ showNotif }) {
 
         {/* Result */}
         <div>
-          <div style={S.sec}><div style={{ width:3,height:14,background:'#38A05F',borderRadius:2 }}/>نتيجة التشخيص</div>
+          <div style={S.sec}>
+            <div style={{ width:3,height:14,background:'#38A05F',borderRadius:2 }}/>نتيجة التشخيص
+          </div>
 
           {!result && !loading && (
             <div style={{ display:'flex', flexDirection:'column', alignItems:'center',
-              justifyContent:'center', height:200, color:'rgba(255,255,255,.2)' }}>
+              justifyContent:'center', height: isMobile ? 150 : 200, color:'rgba(255,255,255,.2)' }}>
               <div style={{ fontSize:44, marginBottom:12 }}>🔬</div>
               <div>ارفع صورة لبدء التشخيص</div>
             </div>
@@ -150,7 +164,7 @@ export default function Diagnosis({ showNotif }) {
                   marginBottom:10, border:`1px solid ${result.color}40` }}>
                   {result.badge}
                 </div>
-                <div style={{ fontSize:15, fontWeight:800, marginBottom:12 }}>{result.name}</div>
+                <div style={{ fontSize: isMobile ? 14 : 15, fontWeight:800, marginBottom:12 }}>{result.name}</div>
                 <div style={{ display:'flex', alignItems:'center', gap:10 }}>
                   <span style={{ fontSize:10, color:'#65C285', whiteSpace:'nowrap' }}>الدقة:</span>
                   <div style={{ flex:1, height:7, background:'rgba(255,255,255,.08)',
@@ -163,14 +177,16 @@ export default function Diagnosis({ showNotif }) {
                 </div>
               </div>
 
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+              <div style={{ display:'grid',
+                gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+                gap:10 }}>
                 <div style={S.card}>
                   <div style={{ fontSize:10, fontWeight:700, color:'#65C285', marginBottom:8 }}>💊 خطة العلاج</div>
                   {result.steps.map(s => (
                     <div key={s} style={{ display:'flex', gap:6, marginBottom:6 }}>
                       <div style={{ width:5, height:5, background:'#38A05F',
                         borderRadius:'50%', marginTop:5, flexShrink:0 }}/>
-                      <span style={{ fontSize:11, color:'rgba(255,255,255,.78)' }}>{s}</span>
+                      <span style={{ fontSize: isMobile ? 12 : 11, color:'rgba(255,255,255,.78)' }}>{s}</span>
                     </div>
                   ))}
                 </div>
@@ -187,28 +203,18 @@ export default function Diagnosis({ showNotif }) {
                 </div>
               </div>
 
-              {/* ⚠️ تنبيه التشخيص — مضاف */}
               <div style={{
-                marginTop: 12,
-                padding: '10px 14px',
+                marginTop: 12, padding: '10px 14px',
                 background: 'rgba(212,168,50,.1)',
                 border: '1px solid rgba(212,168,50,.35)',
-                borderRadius: 10,
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: 8
+                borderRadius: 10, display: 'flex',
+                alignItems: 'flex-start', gap: 8
               }}>
                 <span style={{ fontSize: 16 }}>⚠️</span>
-                <span style={{
-                  fontSize: 11,
-                  color: '#F0CC6A',
-                  lineHeight: 1.7,
-                  fontWeight: 600
-                }}>
+                <span style={{ fontSize: isMobile ? 12 : 11, color: '#F0CC6A', lineHeight: 1.7, fontWeight: 600 }}>
                   تنبيه: هذا التشخيص للإرشاد فقط — استشر مهندساً زراعياً للتأكيد
                 </span>
               </div>
-
             </div>
           )}
         </div>
