@@ -45,7 +45,7 @@ export default function Market({ showNotif }) {
   }
 
   return (
-    <div style={{ padding: isMobile ? '16px 12px 80px' : '24px 24px 60px' }}>
+    <div style={{ padding: isMobile ? '16px 12px 80px' : '24px 24px 60px', overflowX:'hidden', maxWidth:'100vw' }}>
       <div style={{ marginBottom:16 }}>
         <div style={{ fontSize: isMobile ? 18 : 22, fontWeight:700, color:'#A8DFC0' }}>السوق الزراعي 🛒</div>
         <div style={{ fontSize:12, color:'#65C285', opacity:.6, marginTop:4 }}>أسعار لحظية وبيع مباشر</div>
@@ -61,7 +61,7 @@ export default function Market({ showNotif }) {
       </div>
 
       <div style={{ background:'rgba(10,26,13,.7)', border:'1px solid rgba(101,194,133,.12)',
-        borderRadius:12, padding:'10px 16px', marginBottom:16, overflow:'hidden' }}>
+        borderRadius:12, padding:'10px 16px', marginBottom:16, overflow:'hidden', maxWidth:'100%' }}>
         <div style={{ display:'flex', gap:24, animation:'ticker 22s linear infinite', width:'max-content' }}>
           {[...PRICES,...PRICES].map((p,i) => (
             <div key={i} style={{ display:'flex', alignItems:'center', gap:8, whiteSpace:'nowrap' }}>
