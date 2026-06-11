@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 const DATA = {
   'يناير': [
@@ -104,23 +104,31 @@ const DAYS = ['ح','ن','ث','ر','خ','ج','س']
 export default function Calendar() {
   const curMonth = new Date().toLocaleString('ar',{month:'long'})
   const [selected, setSelected] = useState(MONTHS.find(m=>m===curMonth)||MONTHS[3])
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   const firstDay = 2
   const total = 30
   const eventsInMonth = [{d:21,i:'💊',t:'تسميد النخيل'},{d:23,i:'💧',t:'ري دوري'},{d:25,i:'🔬',t:'فحص الطماطم'},{d:28,i:'🌱',t:'بذر الخيار'}]
 
   return (
-    <div style={{ padding:'24px 24px 60px' }}>
-      <div style={{ marginBottom:20 }}>
-        <div style={{ fontSize:22, fontWeight:700, color:'#A8DFC0' }}>التقويم الزراعي 📅</div>
+    <div style={{ padding: isMobile ? '16px 12px 20px' : '24px 24px 60px' }}>
+      <div style={{ marginBottom:16 }}>
+        <div style={{ fontSize: isMobile ? 18 : 22, fontWeight:700, color:'#A8DFC0' }}>التقويم الزراعي 📅</div>
         <div style={{ fontSize:12, color:'#65C285', opacity:.6, marginTop:4 }}>مواعيد الزراعة والعناية — 29 محصول</div>
       </div>
 
       {/* Month tabs */}
-      <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:20 }}>
+      <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:16 }}>
         {MONTHS.map(m => (
           <button key={m} onClick={() => setSelected(m)}
-            style={{ padding:'6px 12px', borderRadius:10, fontSize:11, fontWeight:700,
+            style={{ padding: isMobile ? '7px 10px' : '6px 12px',
+              borderRadius:10, fontSize: isMobile ? 12 : 11, fontWeight:700,
               fontFamily:'Tajawal,sans-serif', cursor:'pointer', border:'none',
               background: selected===m ? '#38A05F' : 'rgba(19,42,26,.6)',
               color: selected===m ? '#fff' : '#65C285' }}>
@@ -129,53 +137,57 @@ export default function Calendar() {
         ))}
       </div>
 
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:18 }}>
+      <div style={{ display:'grid',
+        gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+        gap: isMobile ? 14 : 18 }}>
 
-        {/* Calendar Grid */}
-        <div style={{ background:'rgba(19,42,26,.65)', border:'1px solid rgba(101,194,133,.12)', borderRadius:16, padding:18 }}>
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', gap:3, marginBottom:8 }}>
-            {DAYS.map(d => (
-              <div key={d} style={{ textAlign:'center', fontSize:9, fontWeight:700,
-                color:'#65C285', opacity:.5, padding:3 }}>{d}</div>
-            ))}
+        {/* Calendar Grid — يظهر فقط على الحاسوب */}
+        {!isMobile && (
+          <div style={{ background:'rgba(19,42,26,.65)', border:'1px solid rgba(101,194,133,.12)', borderRadius:16, padding:18 }}>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', gap:3, marginBottom:8 }}>
+              {DAYS.map(d => (
+                <div key={d} style={{ textAlign:'center', fontSize:9, fontWeight:700,
+                  color:'#65C285', opacity:.5, padding:3 }}>{d}</div>
+              ))}
+            </div>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', gap:3 }}>
+              {[...Array(firstDay)].map((_,i) => <div key={i}/>)}
+              {[...Array(total)].map((_,i) => {
+                const d = i+1
+                const ev = eventsInMonth.find(e => e.d===d)
+                const today = d===21
+                return (
+                  <div key={d} style={{ textAlign:'center', padding:'5px 2px',
+                    borderRadius:6, cursor:'pointer',
+                    background: today?'#38A05F':ev?'rgba(56,160,95,.2)':'transparent',
+                    border:`1px solid ${today?'#38A05F':ev?'rgba(101,194,133,.3)':'rgba(101,194,133,.07)'}`,
+                    fontSize:10, color: today?'#fff':'#A8DFC0',
+                    fontWeight: today?800:400 }}>
+                    {d}
+                    {ev && <div style={{ fontSize:7, marginTop:1 }}>{ev.i}</div>}
+                  </div>
+                )
+              })}
+            </div>
           </div>
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', gap:3 }}>
-            {[...Array(firstDay)].map((_,i) => <div key={i}/>)}
-            {[...Array(total)].map((_,i) => {
-              const d = i+1
-              const ev = eventsInMonth.find(e => e.d===d)
-              const today = d===21
-              return (
-                <div key={d} style={{ textAlign:'center', padding:'5px 2px',
-                  borderRadius:6, cursor:'pointer',
-                  background: today?'#38A05F':ev?'rgba(56,160,95,.2)':'transparent',
-                  border:`1px solid ${today?'#38A05F':ev?'rgba(101,194,133,.3)':'rgba(101,194,133,.07)'}`,
-                  fontSize:10, color: today?'#fff':'#A8DFC0',
-                  fontWeight: today?800:400 }}>
-                  {d}
-                  {ev && <div style={{ fontSize:7, marginTop:1 }}>{ev.i}</div>}
-                </div>
-              )
-            })}
-          </div>
-        </div>
+        )}
 
         {/* Events */}
         <div>
           <div style={{ fontSize:11, fontWeight:700, color:'#65C285',
-            letterSpacing:2, marginBottom:14, display:'flex', alignItems:'center', gap:7 }}>
+            letterSpacing:2, marginBottom:12, display:'flex', alignItems:'center', gap:7 }}>
             <div style={{ width:3, height:14, background:'#38A05F', borderRadius:2 }}/>
             نشاطات {selected}
           </div>
-          <div style={{ maxHeight:320, overflowY:'auto' }}>
+          <div style={{ maxHeight: isMobile ? 'none' : 320, overflowY: isMobile ? 'visible' : 'auto' }}>
             {DATA[selected].map((e,i) => (
               <div key={i} style={{ background:'rgba(19,42,26,.4)',
-                borderRadius:12, padding:'11px 13px',
+                borderRadius:12, padding: isMobile ? '12px 14px' : '11px 13px',
                 display:'flex', alignItems:'center', gap:10,
                 borderRight:`3px solid ${e.c}`, marginBottom:9 }}>
-                <span style={{ fontSize:18 }}>{e.i}</span>
+                <span style={{ fontSize: isMobile ? 22 : 18 }}>{e.i}</span>
                 <div>
-                  <div style={{ fontSize:12, fontWeight:700, color:'#A8DFC0' }}>{e.t}</div>
+                  <div style={{ fontSize: isMobile ? 13 : 12, fontWeight:700, color:'#A8DFC0' }}>{e.t}</div>
                   <div style={{ fontSize:9, color:'#65C285', marginTop:2 }}>{selected} 2026</div>
                 </div>
               </div>
@@ -183,14 +195,16 @@ export default function Calendar() {
           </div>
 
           <div style={{ background:'rgba(19,42,26,.65)', border:'1px solid rgba(101,194,133,.12)',
-            borderRadius:14, padding:14, marginTop:16 }}>
+            borderRadius:14, padding:14, marginTop:14 }}>
             <div style={{ fontSize:10, fontWeight:700, color:'#65C285', marginBottom:10 }}>دليل الألوان</div>
-            {[['#22c55e','زراعة'],['#3b82f6','ري'],['#e8b84b','حصاد/تسميد'],['#ef4444','تحذير'],['#a855f7','مكافحة'],['#06b6d4','فحص']].map(([c,l]) => (
-              <div key={l} style={{ display:'flex', alignItems:'center', gap:8, marginBottom:6 }}>
-                <div style={{ width:10, height:10, borderRadius:2, background:c }}/>
-                <span style={{ fontSize:11, color:'#A8DFC0' }}>{l}</span>
-              </div>
-            ))}
+            <div style={{ display:'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : '1fr', gap:6 }}>
+              {[['#22c55e','زراعة'],['#3b82f6','ري'],['#e8b84b','حصاد/تسميد'],['#ef4444','تحذير'],['#a855f7','مكافحة'],['#06b6d4','فحص']].map(([c,l]) => (
+                <div key={l} style={{ display:'flex', alignItems:'center', gap:8 }}>
+                  <div style={{ width:10, height:10, borderRadius:2, background:c, flexShrink:0 }}/>
+                  <span style={{ fontSize:11, color:'#A8DFC0' }}>{l}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
