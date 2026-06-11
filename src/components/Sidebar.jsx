@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 
 const NAV = [
@@ -14,6 +14,7 @@ const NAV = [
 export default function Sidebar({ currentPage, onNavigate }) {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
   const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef(null)
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768)
@@ -21,7 +22,23 @@ export default function Sidebar({ currentPage, onNavigate }) {
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
-  // شريط سفلي للهاتف
+  // إغلاق القائمة عند الضغط خارجها
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setMenuOpen(false)
+      }
+    }
+    if (menuOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+      document.addEventListener('touchstart', handleClickOutside)
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('touchstart', handleClickOutside)
+    }
+  }, [menuOpen])
+
   if (isMobile) return (
     <>
       {/* شريط علوي */}
@@ -48,7 +65,7 @@ export default function Sidebar({ currentPage, onNavigate }) {
 
       {/* قائمة منسدلة */}
       {menuOpen && (
-        <div style={{ position:'fixed', top:56, right:0, left:0, zIndex:199,
+        <div ref={menuRef} style={{ position:'fixed', top:56, right:0, left:0, zIndex:199,
           background:'#0c1e11', borderBottom:'1px solid rgba(101,194,133,.12)',
           padding:'8px 0' }}>
           {NAV.map(item => (
@@ -72,7 +89,7 @@ export default function Sidebar({ currentPage, onNavigate }) {
         borderTop:'1px solid rgba(101,194,133,.12)',
         display:'flex', justifyContent:'space-around', padding:'6px 0', height:60 }}>
         {NAV.slice(0,5).map(item => (
-          <div key={item.id} onClick={() => onNavigate(item.id)}
+          <div key={item.id} onClick={() => { onNavigate(item.id); setMenuOpen(false) }}
             style={{ display:'flex', flexDirection:'column', alignItems:'center',
               gap:3, cursor:'pointer', padding:'4px 8px', borderRadius:8,
               background: currentPage===item.id ? 'rgba(56,160,95,.2)' : 'transparent',
