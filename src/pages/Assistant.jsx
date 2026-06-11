@@ -4,10 +4,17 @@ import { askAssistant } from '../lib/api'
 const QUICK = ['ما أعراض صدأ الحنطة؟','متى أحصد الطماطم؟','كيف أوفر مياه الري؟','ما أفضل سماد للحنطة؟']
 
 export default function Assistant({ showNotif }) {
-  const [msgs, setMsgs]     = useState([{r:'bot',t:'مرحباً! 🌾 أنا مساعدك الزراعي الذكي.\n\nاسألني عن زراعتك — المحاصيل، الأمراض، الري، التسميد!'}])
-  const [inp,  setInp]      = useState('')
-  const [loading, setLoad]  = useState(false)
+  const [msgs, setMsgs]    = useState([{r:'bot',t:'مرحباً! 🌾 أنا مساعدك الزراعي الذكي.\n\nاسألني عن زراعتك — المحاصيل، الأمراض، الري، التسميد!'}])
+  const [inp,  setInp]     = useState('')
+  const [loading, setLoad] = useState(false)
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
   const endRef = useRef(null)
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior:'smooth' }) }, [msgs])
 
@@ -29,20 +36,28 @@ export default function Assistant({ showNotif }) {
   }
 
   return (
-    <div style={{ padding:'24px 24px 20px', display:'flex', flexDirection:'column',
-      height:'calc(100vh - 60px)' }}>
-      <div style={{ marginBottom:14 }}>
-        <div style={{ fontSize:22, fontWeight:700, color:'#A8DFC0' }}>المساعد الذكي 🤖</div>
+    <div style={{
+      padding: isMobile ? '12px 12px 8px' : '24px 24px 20px',
+      display:'flex', flexDirection:'column',
+      height: isMobile ? 'calc(100vh - 116px)' : 'calc(100vh - 60px)'
+    }}>
+      <div style={{ marginBottom:10 }}>
+        <div style={{ fontSize: isMobile ? 18 : 22, fontWeight:700, color:'#A8DFC0' }}>المساعد الذكي 🤖</div>
         <div style={{ fontSize:12, color:'#65C285', opacity:.6, marginTop:4 }}>اسألني بالعربية أو العامية العراقية</div>
       </div>
 
       {/* Quick questions */}
-      <div style={{ display:'flex', gap:7, flexWrap:'wrap', marginBottom:14 }}>
+      <div style={{ display:'flex', gap:7, flexWrap:'wrap', marginBottom:10,
+        overflowX: isMobile ? 'auto' : 'visible',
+        flexWrap: isMobile ? 'nowrap' : 'wrap',
+        paddingBottom: isMobile ? 4 : 0 }}>
         {QUICK.map(q => (
           <button key={q} onClick={() => send(q)}
             style={{ background:'rgba(19,42,26,.6)', border:'1px solid rgba(101,194,133,.15)',
-              borderRadius:10, padding:'6px 12px', fontSize:11, color:'#65C285',
-              fontFamily:'Tajawal,sans-serif', cursor:'pointer' }}>
+              borderRadius:10, padding: isMobile ? '8px 12px' : '6px 12px',
+              fontSize: isMobile ? 12 : 11, color:'#65C285',
+              fontFamily:'Tajawal,sans-serif', cursor:'pointer',
+              whiteSpace:'nowrap', flexShrink:0 }}>
             {q}
           </button>
         ))}
@@ -50,19 +65,22 @@ export default function Assistant({ showNotif }) {
 
       {/* Messages */}
       <div style={{ flex:1, overflow:'auto', background:'rgba(19,42,26,.5)',
-        border:'1px solid rgba(101,194,133,.1)', borderRadius:16, padding:16,
-        marginBottom:14, display:'flex', flexDirection:'column', gap:0 }}>
+        border:'1px solid rgba(101,194,133,.1)', borderRadius:16,
+        padding: isMobile ? 12 : 16,
+        marginBottom:10, display:'flex', flexDirection:'column', gap:0 }}>
         {msgs.map((m,i) => (
           <div key={i} style={{ display:'flex', gap:8, alignItems:'flex-start',
             marginBottom:12, flexDirection: m.r==='user'?'row-reverse':'row' }}>
-            <div style={{ width:28, height:28, borderRadius:'50%',
+            <div style={{ width: isMobile ? 32 : 28, height: isMobile ? 32 : 28,
+              borderRadius:'50%',
               background: m.r==='bot'?'#1e5c38':'#38A05F',
               display:'flex', alignItems:'center', justifyContent:'center',
-              fontSize:13, flexShrink:0 }}>
+              fontSize: isMobile ? 15 : 13, flexShrink:0 }}>
               {m.r==='bot'?'🌾':'👨‍🌾'}
             </div>
-            <div style={{ maxWidth:'80%', padding:'10px 13px', borderRadius:14,
-              fontSize:12, lineHeight:1.7, whiteSpace:'pre-wrap',
+            <div style={{ maxWidth:'85%', padding: isMobile ? '11px 14px' : '10px 13px',
+              borderRadius:14, fontSize: isMobile ? 13 : 12,
+              lineHeight:1.7, whiteSpace:'pre-wrap',
               background: m.r==='bot'?'rgba(19,42,26,.8)':'rgba(56,160,95,.2)',
               border: m.r==='bot'?'1px solid rgba(101,194,133,.13)':'1px solid rgba(56,160,95,.28)',
               color: m.r==='bot'?'rgba(255,255,255,.85)':'#A8DFC0',
@@ -90,18 +108,21 @@ export default function Assistant({ showNotif }) {
       </div>
 
       {/* Input */}
-      <div style={{ display:'flex', gap:10 }}>
+      <div style={{ display:'flex', gap:8 }}>
         <input value={inp} onChange={e=>setInp(e.target.value)}
           onKeyDown={e=>e.key==='Enter'&&send()}
           placeholder="اسألني عن زراعتك..."
           style={{ flex:1, background:'rgba(19,42,26,.7)',
             border:'1px solid rgba(101,194,133,.18)', borderRadius:11,
-            padding:'10px 13px', fontFamily:'Tajawal,sans-serif',
-            fontSize:13, color:'#fff', outline:'none' }}/>
+            padding: isMobile ? '12px 14px' : '10px 13px',
+            fontFamily:'Tajawal,sans-serif',
+            fontSize: isMobile ? 14 : 13, color:'#fff', outline:'none' }}/>
         <button onClick={()=>send()} disabled={loading||!inp.trim()}
           style={{ background:'linear-gradient(135deg,#38A05F,#2A6E47)', color:'#fff',
-            border:'none', borderRadius:11, padding:'10px 20px',
-            fontFamily:'Tajawal,sans-serif', fontSize:13, fontWeight:700,
+            border:'none', borderRadius:11,
+            padding: isMobile ? '12px 18px' : '10px 20px',
+            fontFamily:'Tajawal,sans-serif',
+            fontSize: isMobile ? 14 : 13, fontWeight:700,
             cursor:'pointer', opacity: loading||!inp.trim()?0.5:1 }}>
           إرسال
         </button>
