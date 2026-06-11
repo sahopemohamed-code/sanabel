@@ -22,6 +22,13 @@ export default function Market({ showNotif }) {
   const [tab, setTab] = useState('browse')
   const [listings, setListings] = useState([])
   const [form, setForm] = useState({ crop_type:'حنطة', quantity:'', price_per_unit:'', province:'بابل' })
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   useEffect(() => {
     supabase.from('market_listings').select('*').eq('is_available', true).limit(20)
@@ -38,37 +45,25 @@ export default function Market({ showNotif }) {
   }
 
   return (
-    <div style={{ padding:'24px 24px 60px' }}>
-      <div style={{ marginBottom:20 }}>
-        <div style={{ fontSize:22, fontWeight:700, color:'#A8DFC0' }}>السوق الزراعي 🛒</div>
+    <div style={{ padding: isMobile ? '16px 12px 20px' : '24px 24px 60px' }}>
+      <div style={{ marginBottom:16 }}>
+        <div style={{ fontSize: isMobile ? 18 : 22, fontWeight:700, color:'#A8DFC0' }}>السوق الزراعي 🛒</div>
         <div style={{ fontSize:12, color:'#65C285', opacity:.6, marginTop:4 }}>أسعار لحظية وبيع مباشر</div>
       </div>
 
-      {/* ⚠️ ملاحظة الأسعار — مضافة */}
-      <div style={{
-        marginBottom: 14,
-        padding: '10px 14px',
-        background: 'rgba(212,168,50,.1)',
-        border: '1px solid rgba(212,168,50,.35)',
-        borderRadius: 10,
-        display: 'flex',
-        alignItems: 'flex-start',
-        gap: 8
-      }}>
-        <span style={{ fontSize: 16 }}>⚠️</span>
-        <span style={{
-          fontSize: 11,
-          color: '#F0CC6A',
-          lineHeight: 1.7,
-          fontWeight: 600
-        }}>
+      {/* ملاحظة الأسعار */}
+      <div style={{ marginBottom:14, padding:'10px 14px',
+        background:'rgba(212,168,50,.1)', border:'1px solid rgba(212,168,50,.35)',
+        borderRadius:10, display:'flex', alignItems:'flex-start', gap:8 }}>
+        <span style={{ fontSize:16 }}>⚠️</span>
+        <span style={{ fontSize: isMobile ? 12 : 11, color:'#F0CC6A', lineHeight:1.7, fontWeight:600 }}>
           الأسعار تقريبية وتحديثها يدوي — تحقق من أسعار السوق المحلي
         </span>
       </div>
 
       {/* Ticker */}
       <div style={{ background:'rgba(10,26,13,.7)', border:'1px solid rgba(101,194,133,.12)',
-        borderRadius:12, padding:'12px 16px', marginBottom:20, overflow:'hidden' }}>
+        borderRadius:12, padding:'10px 16px', marginBottom:16, overflow:'hidden' }}>
         <div style={{ display:'flex', gap:24, animation:'ticker 22s linear infinite', width:'max-content' }}>
           {[...PRICES,...PRICES].map((p,i) => (
             <div key={i} style={{ display:'flex', alignItems:'center', gap:8, whiteSpace:'nowrap' }}>
@@ -84,10 +79,12 @@ export default function Market({ showNotif }) {
       </div>
 
       {/* Tabs */}
-      <div style={{ display:'flex', gap:8, marginBottom:18 }}>
+      <div style={{ display:'flex', gap:8, marginBottom:16 }}>
         {[['browse','تصفح العروض'],['sell','بيع محصولك'],['prices','الأسعار']].map(([t,l]) => (
           <button key={t} onClick={() => setTab(t)}
-            style={{ padding:'8px 16px', borderRadius:10, fontSize:12, fontWeight:700,
+            style={{ flex: isMobile ? 1 : 'none',
+              padding: isMobile ? '10px 8px' : '8px 16px',
+              borderRadius:10, fontSize: isMobile ? 11 : 12, fontWeight:700,
               fontFamily:'Tajawal,sans-serif', cursor:'pointer', border:'none',
               background: tab===t ? '#38A05F' : 'rgba(19,42,26,.6)',
               color: tab===t ? '#fff' : '#65C285' }}>
@@ -99,23 +96,27 @@ export default function Market({ showNotif }) {
       {tab === 'browse' && (
         <div>
           {(listings.length ? listings : LISTINGS).map((l,i) => (
-            <div key={i} style={{ ...S.card, display:'flex', alignItems:'center', gap:14 }}>
-              <div style={{ width:46, height:46, background:'rgba(30,92,56,.2)',
-                borderRadius:12, display:'flex', alignItems:'center',
-                justifyContent:'center', fontSize:24 }}>{l.e || l.emoji || '🌾'}</div>
-              <div style={{ flex:1 }}>
-                <div style={{ fontSize:13, fontWeight:700, color:'#A8DFC0' }}>{l.n || l.crop_type}</div>
+            <div key={i} style={{ ...S.card, display:'flex', alignItems:'center', gap:12 }}>
+              <div style={{ width: isMobile ? 42 : 46, height: isMobile ? 42 : 46,
+                background:'rgba(30,92,56,.2)', borderRadius:12,
+                display:'flex', alignItems:'center', justifyContent:'center',
+                fontSize: isMobile ? 22 : 24, flexShrink:0 }}>
+                {l.e || l.emoji || '🌾'}
+              </div>
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ fontSize: isMobile ? 14 : 13, fontWeight:700, color:'#A8DFC0' }}>{l.n || l.crop_type}</div>
                 <div style={{ fontSize:10, color:'#65C285', opacity:.6, marginTop:2 }}>📍 {l.s || l.province}</div>
                 <div style={{ fontSize:10, color:'#60a5fa', marginTop:4 }}>{l.q || l.quantity+' كغ'}</div>
               </div>
-              <div style={{ textAlign:'left' }}>
-                <div style={{ fontSize:16, fontWeight:900, color:'#A8DFC0' }}>
+              <div style={{ textAlign:'left', flexShrink:0 }}>
+                <div style={{ fontSize: isMobile ? 15 : 16, fontWeight:900, color:'#A8DFC0' }}>
                   {(l.p || l.price_per_unit || 0).toLocaleString('ar')}
                 </div>
                 <div style={{ fontSize:9, color:'#65C285', opacity:.5 }}>د.ع/كغ</div>
                 <button onClick={() => showNotif('🛒','تم الطلب!','سيتواصل البائع قريباً')}
                   style={{ marginTop:6, background:'#38A05F', color:'#fff', border:'none',
-                    borderRadius:8, padding:'5px 12px', fontSize:11, fontWeight:700,
+                    borderRadius:8, padding: isMobile ? '7px 14px' : '5px 12px',
+                    fontSize: isMobile ? 12 : 11, fontWeight:700,
                     fontFamily:'Tajawal,sans-serif', cursor:'pointer' }}>
                   اشتري
                 </button>
@@ -145,8 +146,10 @@ export default function Market({ showNotif }) {
             value={form.price_per_unit} onChange={e => setForm({...form,price_per_unit:e.target.value})} required/>
           <button type="submit"
             style={{ width:'100%', background:'linear-gradient(135deg,#D4A832,#a37618)',
-              color:'#fff', border:'none', borderRadius:12, padding:13,
-              fontFamily:'Tajawal,sans-serif', fontSize:14, fontWeight:700, cursor:'pointer' }}>
+              color:'#fff', border:'none', borderRadius:12,
+              padding: isMobile ? 16 : 13,
+              fontFamily:'Tajawal,sans-serif', fontSize: isMobile ? 16 : 14,
+              fontWeight:700, cursor:'pointer' }}>
             نشر العرض في السوق
           </button>
         </form>
@@ -157,9 +160,9 @@ export default function Market({ showNotif }) {
           {PRICES.map((p,i) => (
             <div key={i} style={{ display:'flex', alignItems:'center', gap:10, padding:'9px 0',
               borderTop: i>0 ? '1px solid rgba(101,194,133,.08)' : 'none' }}>
-              <span style={{ fontSize:20 }}>{p.e}</span>
-              <span style={{ flex:1, fontSize:12, color:'#A8DFC0', fontWeight:600 }}>{p.n}</span>
-              <span style={{ fontSize:13, fontWeight:800, color:'#F0CC6A' }}>{p.p.toLocaleString('ar')}</span>
+              <span style={{ fontSize: isMobile ? 22 : 20 }}>{p.e}</span>
+              <span style={{ flex:1, fontSize: isMobile ? 13 : 12, color:'#A8DFC0', fontWeight:600 }}>{p.n}</span>
+              <span style={{ fontSize: isMobile ? 14 : 13, fontWeight:800, color:'#F0CC6A' }}>{p.p.toLocaleString('ar')}</span>
               <span style={{ fontSize:10, fontWeight:700, width:45,
                 color: p.c>=0?'#4ade80':'#f87171' }}>{p.c>=0?'↑':'↓'}{Math.abs(p.c)}%</span>
             </div>
