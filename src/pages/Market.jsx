@@ -45,7 +45,7 @@ export default function Market({ showNotif }) {
   }
 
   return (
-    <div style={{ padding: isMobile ? '16px 12px 20px' : '24px 24px 60px' }}>
+    <div style={{ padding: isMobile ? '16px 12px 80px' : '24px 24px 60px' }}>
       <div style={{ marginBottom:16 }}>
         <div style={{ fontSize: isMobile ? 18 : 22, fontWeight:700, color:'#A8DFC0' }}>السوق الزراعي 🛒</div>
         <div style={{ fontSize:12, color:'#65C285', opacity:.6, marginTop:4 }}>أسعار لحظية وبيع مباشر</div>
@@ -96,31 +96,64 @@ export default function Market({ showNotif }) {
       {tab === 'browse' && (
         <div>
           {(listings.length ? listings : LISTINGS).map((l,i) => (
-            <div key={i} style={{ ...S.card, display:'flex', alignItems:'center', gap:12 }}>
-              <div style={{ width: isMobile ? 42 : 46, height: isMobile ? 42 : 46,
-                background:'rgba(30,92,56,.2)', borderRadius:12,
-                display:'flex', alignItems:'center', justifyContent:'center',
-                fontSize: isMobile ? 22 : 24, flexShrink:0 }}>
-                {l.e || l.emoji || '🌾'}
-              </div>
-              <div style={{ flex:1, minWidth:0 }}>
-                <div style={{ fontSize: isMobile ? 14 : 13, fontWeight:700, color:'#A8DFC0' }}>{l.n || l.crop_type}</div>
-                <div style={{ fontSize:10, color:'#65C285', opacity:.6, marginTop:2 }}>📍 {l.s || l.province}</div>
-                <div style={{ fontSize:10, color:'#60a5fa', marginTop:4 }}>{l.q || l.quantity+' كغ'}</div>
-              </div>
-              <div style={{ textAlign:'left', flexShrink:0 }}>
-                <div style={{ fontSize: isMobile ? 15 : 16, fontWeight:900, color:'#A8DFC0' }}>
-                  {(l.p || l.price_per_unit || 0).toLocaleString('ar')}
+            <div key={i} style={{ ...S.card }}>
+              {/* الهاتف — تصميم عمودي */}
+              {isMobile ? (
+                <>
+                  <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:12 }}>
+                    <div style={{ width:46, height:46, background:'rgba(30,92,56,.2)',
+                      borderRadius:12, display:'flex', alignItems:'center',
+                      justifyContent:'center', fontSize:24, flexShrink:0 }}>
+                      {l.e || l.emoji || '🌾'}
+                    </div>
+                    <div style={{ flex:1 }}>
+                      <div style={{ fontSize:15, fontWeight:700, color:'#A8DFC0' }}>{l.n || l.crop_type}</div>
+                      <div style={{ fontSize:11, color:'#65C285', opacity:.6, marginTop:2 }}>📍 {l.s || l.province}</div>
+                      <div style={{ fontSize:11, color:'#60a5fa', marginTop:2 }}>{l.q || l.quantity+' كغ'}</div>
+                    </div>
+                  </div>
+                  <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+                    <div>
+                      <span style={{ fontSize:20, fontWeight:900, color:'#F0CC6A' }}>
+                        {(l.p || l.price_per_unit || 0).toLocaleString('ar')}
+                      </span>
+                      <span style={{ fontSize:11, color:'#65C285', marginRight:4 }}>د.ع/كغ</span>
+                    </div>
+                    <button onClick={() => showNotif('🛒','تم الطلب!','سيتواصل البائع قريباً')}
+                      style={{ background:'#38A05F', color:'#fff', border:'none',
+                        borderRadius:10, padding:'10px 24px', fontSize:14, fontWeight:700,
+                        fontFamily:'Tajawal,sans-serif', cursor:'pointer' }}>
+                      🛒 اشتري
+                    </button>
+                  </div>
+                </>
+              ) : (
+                /* الحاسوب — تصميم أفقي */
+                <div style={{ display:'flex', alignItems:'center', gap:14 }}>
+                  <div style={{ width:46, height:46, background:'rgba(30,92,56,.2)',
+                    borderRadius:12, display:'flex', alignItems:'center',
+                    justifyContent:'center', fontSize:24, flexShrink:0 }}>
+                    {l.e || l.emoji || '🌾'}
+                  </div>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ fontSize:13, fontWeight:700, color:'#A8DFC0' }}>{l.n || l.crop_type}</div>
+                    <div style={{ fontSize:10, color:'#65C285', opacity:.6, marginTop:2 }}>📍 {l.s || l.province}</div>
+                    <div style={{ fontSize:10, color:'#60a5fa', marginTop:4 }}>{l.q || l.quantity+' كغ'}</div>
+                  </div>
+                  <div style={{ textAlign:'left', flexShrink:0 }}>
+                    <div style={{ fontSize:16, fontWeight:900, color:'#A8DFC0' }}>
+                      {(l.p || l.price_per_unit || 0).toLocaleString('ar')}
+                    </div>
+                    <div style={{ fontSize:9, color:'#65C285', opacity:.5 }}>د.ع/كغ</div>
+                    <button onClick={() => showNotif('🛒','تم الطلب!','سيتواصل البائع قريباً')}
+                      style={{ marginTop:6, background:'#38A05F', color:'#fff', border:'none',
+                        borderRadius:8, padding:'5px 12px', fontSize:11, fontWeight:700,
+                        fontFamily:'Tajawal,sans-serif', cursor:'pointer' }}>
+                      اشتري
+                    </button>
+                  </div>
                 </div>
-                <div style={{ fontSize:9, color:'#65C285', opacity:.5 }}>د.ع/كغ</div>
-                <button onClick={() => showNotif('🛒','تم الطلب!','سيتواصل البائع قريباً')}
-                  style={{ marginTop:6, background:'#38A05F', color:'#fff', border:'none',
-                    borderRadius:8, padding: isMobile ? '7px 14px' : '5px 12px',
-                    fontSize: isMobile ? 12 : 11, fontWeight:700,
-                    fontFamily:'Tajawal,sans-serif', cursor:'pointer' }}>
-                  اشتري
-                </button>
-              </div>
+              )}
             </div>
           ))}
         </div>
