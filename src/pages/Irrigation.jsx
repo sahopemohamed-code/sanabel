@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { calculateIrrigation } from '../lib/api'
 
 const S = {
@@ -14,6 +14,13 @@ export default function Irrigation({ showNotif }) {
     cropType:'حنطة', soilType:'طمي', season:'صيف', stage:'نمو خضري', area:10
   })
   const [result, setResult] = useState(null)
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   const calc = () => {
     const r = calculateIrrigation(form)
@@ -22,13 +29,15 @@ export default function Irrigation({ showNotif }) {
   }
 
   return (
-    <div style={{ padding:'24px 24px 60px' }}>
-      <div style={{ marginBottom:20 }}>
-        <div style={{ fontSize:22, fontWeight:700, color:'#A8DFC0' }}>نظام الري الذكي 💧</div>
+    <div style={{ padding: isMobile ? '16px 12px 20px' : '24px 24px 60px' }}>
+      <div style={{ marginBottom:16 }}>
+        <div style={{ fontSize: isMobile ? 18 : 22, fontWeight:700, color:'#A8DFC0' }}>نظام الري الذكي 💧</div>
         <div style={{ fontSize:12, color:'#65C285', opacity:.6, marginTop:4 }}>احسب الكمية المثلى للري</div>
       </div>
 
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:20 }}>
+      <div style={{ display:'grid',
+        gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+        gap: isMobile ? 16 : 20 }}>
 
         {/* Form */}
         <div style={S.card}>
@@ -54,8 +63,10 @@ export default function Irrigation({ showNotif }) {
             style={{ width:'100%', accentColor:'#38A05F', marginBottom:16 }}/>
           <button onClick={calc}
             style={{ width:'100%', background:'linear-gradient(135deg,#38A05F,#2A6E47)',
-              color:'#fff', border:'none', borderRadius:12, padding:13,
-              fontFamily:'Tajawal,sans-serif', fontSize:14, fontWeight:700, cursor:'pointer' }}>
+              color:'#fff', border:'none', borderRadius:12,
+              padding: isMobile ? 16 : 13,
+              fontFamily:'Tajawal,sans-serif', fontSize: isMobile ? 16 : 14,
+              fontWeight:700, cursor:'pointer' }}>
             💧 احسب جدول الري
           </button>
         </div>
@@ -64,7 +75,7 @@ export default function Irrigation({ showNotif }) {
         <div>
           {!result ? (
             <div style={{ display:'flex', flexDirection:'column', alignItems:'center',
-              justifyContent:'center', height:220, color:'rgba(255,255,255,.2)' }}>
+              justifyContent:'center', height: isMobile ? 150 : 220, color:'rgba(255,255,255,.2)' }}>
               <div style={{ fontSize:44, marginBottom:12 }}>💧</div>
               <div>أدخل بيانات حقلك</div>
             </div>
@@ -72,7 +83,9 @@ export default function Irrigation({ showNotif }) {
             <div className="fade-in">
               <div style={{ ...S.card, background:'linear-gradient(135deg,rgba(19,42,26,.9),rgba(10,26,13,.9))', marginBottom:12 }}>
                 <div style={{ fontSize:11, color:'#65C285', opacity:.6, marginBottom:4 }}>الكمية اليومية</div>
-                <div style={{ fontSize:48, fontWeight:900, color:'#A8DFC0' }}>{result.daily.toLocaleString('ar')}</div>
+                <div style={{ fontSize: isMobile ? 40 : 48, fontWeight:900, color:'#A8DFC0' }}>
+                  {result.daily.toLocaleString('ar')}
+                </div>
                 <div style={{ fontSize:13, color:'#65C285' }}>لتر / يوم</div>
                 <div style={{ display:'flex', gap:8, marginTop:12, flexWrap:'wrap' }}>
                   <span style={{ background:'rgba(41,128,185,.2)', color:'#60a5fa',
@@ -92,17 +105,19 @@ export default function Irrigation({ showNotif }) {
                   <div key={d.day} style={{ display:'flex', justifyContent:'space-between',
                     alignItems:'center', background:'rgba(10,26,13,.5)',
                     borderRadius:9, padding:'9px 12px', marginBottom:6 }}>
-                    <span style={{ fontSize:12, color:'#A8DFC0', fontWeight:600 }}>{d.day}</span>
+                    <span style={{ fontSize: isMobile ? 13 : 12, color:'#A8DFC0', fontWeight:600 }}>{d.day}</span>
                     {d.skip
                       ? <span style={{ color:'#f87171', fontSize:11, fontWeight:700 }}>لا ري</span>
-                      : <span style={{ color:'#F0CC6A', fontWeight:700, fontSize:12 }}>{d.amt.toLocaleString('ar')} لتر</span>
+                      : <span style={{ color:'#F0CC6A', fontWeight:700, fontSize: isMobile ? 13 : 12 }}>
+                          {d.amt.toLocaleString('ar')} لتر
+                        </span>
                     }
                   </div>
                 ))}
                 <div style={{ background:'rgba(56,160,95,.1)', border:'1px solid rgba(56,160,95,.2)',
                   borderRadius:10, padding:11, marginTop:10 }}>
                   <div style={{ fontSize:10, fontWeight:700, color:'#65C285', marginBottom:3 }}>💡 نصيحة</div>
-                  <div style={{ fontSize:11, color:'rgba(255,255,255,.7)' }}>{result.tip}</div>
+                  <div style={{ fontSize: isMobile ? 12 : 11, color:'rgba(255,255,255,.7)' }}>{result.tip}</div>
                 </div>
               </div>
             </div>
