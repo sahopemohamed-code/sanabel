@@ -13,11 +13,18 @@ import Auth from './pages/Auth'
 import ExpertDashboard from './pages/ExpertDashboard'
 
 export default function App() {
-  const [page, setPage]       = useState('dashboard')
-  const [user, setUser]       = useState(null)
-  const [loading, setLoad]    = useState(true)
-  const [notif, setNotif]     = useState(null)
+  const [page, setPage]         = useState('dashboard')
+  const [user, setUser]         = useState(null)
+  const [loading, setLoad]      = useState(true)
+  const [notif, setNotif]       = useState(null)
   const [isExpert, setIsExpert] = useState(false)
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -74,8 +81,14 @@ export default function App() {
     <div style={{ display:'flex', minHeight:'100vh', fontFamily:'Tajawal,sans-serif',
       background:'#0C1E13', color:'white', direction:'rtl' }}>
       <Sidebar currentPage={page} onNavigate={setPage} />
-      <main style={{ flex:1, marginRight:220, minHeight:'100vh',
-        background:'linear-gradient(135deg,#0C1E13,#0d1f11)' }}>
+      <main style={{
+        flex: 1,
+        marginRight: isMobile ? 0 : 220,
+        marginTop: isMobile ? 56 : 0,
+        marginBottom: isMobile ? 60 : 0,
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg,#0C1E13,#0d1f11)'
+      }}>
         <div className="fade-in">{pages[page]}</div>
       </main>
       {notif && <Notification {...notif} />}
