@@ -67,27 +67,25 @@ export async function getWeather(lat = 32.5, lon = 44.4) {
 }
 
 // ============================================================
-// المساعد الذكي — بدون تغيير
+// المساعد الذكي — النسخة المطورة
+// context اختياري: { province: 'الأنبار', weather: 'حار 42°' }
 // ============================================================
-export async function askAssistant(message, history = []) {
+export async function askAssistant(message, history = [], context = {}) {
   try {
     const res = await fetch('/api/chat', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1024,
-        system: `أنت مساعد زراعي خبير متخصص في الزراعة العراقية.
-تتحدث العربية والعامية العراقية بطلاقة.
-تعرف المحاصيل العراقية: حنطة، شعير، تمر، طماطم، خيار، باذنجان، بصل، بطاطا.
-إجاباتك مختصرة وعملية.`,
-        messages: [...history, { role: 'user', content: message }]
-      })
+      body: JSON.stringify({ message, history, context })
     })
     const data = await res.json()
-    return { success: true, message: data.content[0].text }
+
+    if (!res.ok || !data.success) {
+      return { success: false, error: data.error || 'فشل الاتصال بالمساعد' }
+    }
+
+    return { success: true, message: data.reply }
   } catch (e) {
     return { success: false, error: e.message }
   }
