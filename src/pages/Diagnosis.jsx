@@ -1,222 +1,359 @@
-import { useState, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import { diagnosePlant } from '../lib/api'
-import { supabase } from '../lib/supabase'
 
-const DB = {
-  rust: {
-    badge:'🦠 صدأ أصفر', color:'#ef4444',
-    name:'الصدأ الأصفر — Puccinia striiformis',
-    conf:92,
-    steps:['رش مبيد فطري خلال 24 ساعة','عزل النباتات المصابة','قلل الرطوبة','تابع كل 3 أيام'],
-    meds:['Tebuconazole','Propiconazole','مانكوزيب 80%']
-  },
-  blight: {
-    badge:'🍅 لفحة مبكرة', color:'#f97316',
-    name:'اللفحة المبكرة — Alternaria solani',
-    conf:88,
-    steps:['أزل الأوراق المصابة','رش كبريت + نحاس','قلل الري','عالج التربة'],
-    meds:['Chlorothalonil','Mancozeb 75%','نحاس هيدروكسيد']
-  },
-  healthy: {
-    badge:'✅ نبات سليم', color:'#22c55e',
-    name:'النبات بصحة ممتازة',
-    conf:97,
-    steps:['لا أمراض مكتشفة','اللون طبيعي','معدل النمو سليم','استمر بالعناية'],
-    meds:['لا علاج مطلوب']
-  }
+// ============================================================
+// سنابل — صفحة تشخيص الأمراض (نظام Gemini الجديد)
+// ترفع صورة → تضغطها → ترسلها → تعرض تشخيصاً كاملاً
+// ============================================================
+
+const CROPS = [
+  '', 'حنطة', 'شعير', 'طماطم', 'خيار', 'باذنجان', 'بطاطا', 'بصل',
+  'فلفل', 'نخيل', 'ذرة', 'رقي', 'بطيخ', 'كوسا', 'عنب', 'رمان',
+  'تفاح', 'برتقال', 'ليمون', 'زيتون', 'فراولة', 'قطن', 'محصول آخر'
+]
+
+const PROVINCES = [
+  '', 'الأنبار', 'بغداد', 'البصرة', 'نينوى', 'أربيل', 'النجف', 'كربلاء',
+  'بابل', 'ديالى', 'ذي قار', 'السليمانية', 'صلاح الدين', 'القادسية',
+  'كركوك', 'واسط', 'ميسان', 'المثنى', 'دهوك'
+]
+
+// ضغط الصورة قبل الإرسال — يوفر بيانات المزارع ويسرّع التشخيص
+function compressImage(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const img = new Image()
+      img.onload = () => {
+        let { width, height } = img
+        const MAX = 1024
+        if (width > MAX || height > MAX) {
+          if (width > height) {
+            height = Math.round((height * MAX) / width); width = MAX
+          } else {
+            width = Math.round((width * MAX) / height); height = MAX
+          }
+        }
+        const canvas = document.createElement('canvas')
+        canvas.width = width
+        canvas.height = height
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height)
+        resolve(canvas.toDataURL('image/jpeg', 0.85))
+      }
+      img.onerror = () => reject(new Error('تعذر قراءة الصورة'))
+      img.src = e.target.result
+    }
+    reader.onerror = () => reject(new Error('تعذر فتح الملف'))
+    reader.readAsDataURL(file)
+  })
 }
 
-const S = {
-  card: { background:'rgba(19,42,26,.65)', border:'1px solid rgba(101,194,133,.12)',
-    borderRadius:16, padding:18, marginBottom:12 },
-  sec: { fontSize:11, fontWeight:700, color:'#65C285', letterSpacing:2,
-    marginBottom:14, display:'flex', alignItems:'center', gap:7 },
-}
+export default function DiseaseDetection() {
+  const [preview, setPreview] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [result, setResult] = useState(null)
+  const [error, setError] = useState(null)
+  const [cropType, setCropType] = useState('')
+  const [province, setProvince] = useState('')
+  const fileRef = useRef(null)
 
-export default function Diagnosis({ showNotif }) {
-  const [preview,  setPreview]  = useState(null)
-  const [result,   setResult]   = useState(null)
-  const [loading,  setLoading]  = useState(false)
-  const [conf,     setConf]     = useState(0)
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024)
+  async function handleFile(file) {
+    if (!file || !file.type.startsWith('image/')) {
+      setError('الرجاء اختيار صورة صالحة')
+      return
+    }
+    setError(null)
+    setResult(null)
+    setLoading(true)
 
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 1024)
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
+    try {
+      const dataUrl = await compressImage(file)
+      setPreview(dataUrl)
 
-  const runDiag = (type) => {
-    setLoading(true); setResult(null); setConf(0)
-    setTimeout(() => {
-      const d = DB[type]; let c = 0
-      const t = setInterval(() => {
-        c += 2; setConf(c)
-        if (c >= d.conf) { clearInterval(t); setConf(d.conf) }
-      }, 18)
-      setResult(d); setLoading(false)
-      supabase.from('diagnoses').insert({
-        disease_name: d.name, confidence: d.conf,
-        is_healthy: type === 'healthy'
-      })
-      showNotif('🔬', 'تشخيص مكتمل!', d.name.split('—')[0])
-    }, 2000)
+      const res = await diagnosePlant(dataUrl, { cropType, province })
+
+      if (!res.success) {
+        setError(res.error || 'فشل التشخيص، حاول مرة أخرى')
+      } else {
+        setResult(res.data)
+      }
+    } catch (e) {
+      setError(e.message || 'حدث خطأ غير متوقع')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const handleFile = (e) => {
-    const f = e.target.files[0]; if (!f) return
-    const r = new FileReader()
-    r.onload = ev => { setPreview(ev.target.result); setResult(null) }
-    r.readAsDataURL(f)
+  function reset() {
+    setPreview(null)
+    setResult(null)
+    setError(null)
+    if (fileRef.current) fileRef.current.value = ''
+  }
+
+  const severityColor = {
+    'خفيفة': 'bg-yellow-500/20 text-yellow-400 border-yellow-500/40',
+    'متوسطة': 'bg-orange-500/20 text-orange-400 border-orange-500/40',
+    'شديدة': 'bg-red-500/20 text-red-400 border-red-500/40',
   }
 
   return (
-    <div style={{ padding: isMobile ? '16px 12px 20px' : '24px 24px 60px' }}>
-      <div style={{ marginBottom:16 }}>
-        <div style={{ fontSize: isMobile ? 18 : 22, fontWeight:700, color:'#A8DFC0' }}>تشخيص الأمراض 🔬</div>
-        <div style={{ fontSize:12, color:'#65C285', opacity:.6, marginTop:4 }}>
-          ارفع صورة النبات للحصول على تشخيص فوري
-        </div>
-      </div>
+    <div dir="rtl" className="min-h-screen bg-[#0d1a0f] text-emerald-50 px-4 py-6 pb-28">
+      <div className="max-w-lg mx-auto space-y-5">
 
-      <div style={{ display:'grid',
-        gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
-        gap: isMobile ? 16 : 20 }}>
+        {/* ===== العنوان ===== */}
+        <header className="text-center space-y-1">
+          <h1 className="text-2xl font-bold text-emerald-300">🔬 تشخيص الأمراض</h1>
+          <p className="text-sm text-emerald-200/60">
+            ارفع صورة النبات واحصل على تشخيص ذكي بخطة علاج كاملة
+          </p>
+        </header>
 
-        <div>
-          <div style={S.sec}>
-            <div style={{ width:3,height:14,background:'#38A05F',borderRadius:2 }}/>رفع صورة
+        {/* ===== خيارات تحسين الدقة ===== */}
+        {!result && (
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs text-emerald-200/70 mb-1">نوع المحصول (اختياري)</label>
+              <select
+                value={cropType}
+                onChange={(e) => setCropType(e.target.value)}
+                className="w-full rounded-xl bg-[#16271a] border border-emerald-800/60 px-3 py-2.5 text-sm focus:outline-none focus:border-emerald-500"
+              >
+                {CROPS.map((c) => (
+                  <option key={c} value={c}>{c || 'غير محدد'}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs text-emerald-200/70 mb-1">المحافظة (اختياري)</label>
+              <select
+                value={province}
+                onChange={(e) => setProvince(e.target.value)}
+                className="w-full rounded-xl bg-[#16271a] border border-emerald-800/60 px-3 py-2.5 text-sm focus:outline-none focus:border-emerald-500"
+              >
+                {PROVINCES.map((p) => (
+                  <option key={p} value={p}>{p || 'غير محددة'}</option>
+                ))}
+              </select>
+            </div>
           </div>
-          <div style={{ border:'2px dashed rgba(101,194,133,.3)', borderRadius:18,
-            padding: isMobile ? 24 : 36, textAlign:'center', cursor:'pointer',
-            background:'rgba(19,42,26,.3)', position:'relative', marginBottom:14 }}
-            onClick={() => document.getElementById('fi').click()}>
-            <input id="fi" type="file" accept="image/*" style={{ display:'none' }} onChange={handleFile}/>
+        )}
+
+        {/* ===== منطقة رفع الصورة ===== */}
+        {!result && (
+          <button
+            onClick={() => fileRef.current?.click()}
+            disabled={loading}
+            className="w-full rounded-2xl border-2 border-dashed border-emerald-600/50 bg-[#13231663] hover:bg-[#16271a] transition p-8 flex flex-col items-center gap-3 disabled:opacity-60"
+          >
             {preview ? (
-              <img src={preview} style={{ width:'100%', maxHeight: isMobile ? 200 : 180,
-                objectFit:'cover', borderRadius:10 }}/>
+              <img src={preview} alt="معاينة" className="max-h-56 rounded-xl object-contain" />
             ) : (
               <>
-                <div style={{ fontSize: isMobile ? 48 : 40, marginBottom:10 }}>📸</div>
-                <div style={{ fontSize: isMobile ? 16 : 15, fontWeight:700, color:'#A8DFC0' }}>صوّر النبات</div>
-                <div style={{ fontSize:11, color:'#65C285', opacity:.5, marginTop:4 }}>اضغط لرفع صورة</div>
+                <span className="text-5xl">📸</span>
+                <span className="font-semibold text-emerald-200">صوّر النبات</span>
+                <span className="text-xs text-emerald-200/50">اضغط لرفع صورة أو التقاطها بالكاميرا</span>
               </>
             )}
+          </button>
+        )}
+
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          className="hidden"
+          onChange={(e) => handleFile(e.target.files?.[0])}
+        />
+
+        {/* ===== حالة التحميل ===== */}
+        {loading && (
+          <div className="rounded-2xl bg-[#16271a] border border-emerald-800/60 p-6 text-center space-y-3">
+            <div className="mx-auto h-10 w-10 rounded-full border-4 border-emerald-700 border-t-emerald-300 animate-spin" />
+            <p className="text-sm text-emerald-200/80">جاري تحليل الصورة بالذكاء الاصطناعي...</p>
+            <p className="text-xs text-emerald-200/50">قد يستغرق التشخيص 5-15 ثانية</p>
           </div>
+        )}
 
-          {preview && (
-            <button onClick={() => runDiag('rust')}
-              style={{ width:'100%', background:'linear-gradient(135deg,#38A05F,#2A6E47)',
-                color:'#fff', border:'none', borderRadius:12,
-                padding: isMobile ? 16 : 13,
-                fontFamily:'Tajawal,sans-serif', fontSize: isMobile ? 16 : 14, fontWeight:700,
-                cursor:'pointer', marginBottom:16 }}>
-              🔬 تشخيص الآن
-            </button>
-          )}
+        {/* ===== رسالة خطأ ===== */}
+        {error && (
+          <div className="rounded-2xl bg-red-950/40 border border-red-700/50 p-4 text-center space-y-2">
+            <p className="text-red-300 text-sm">⚠️ {error}</p>
+            <button onClick={reset} className="text-xs text-red-200 underline">حاول مرة أخرى</button>
+          </div>
+        )}
 
-          <div style={{ fontSize:11, color:'#65C285', opacity:.5, marginBottom:10 }}>أمثلة تجريبية:</div>
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8 }}>
-            {[['rust','🌾','صدأ'],['blight','🍅','لفحة'],['healthy','🌿','سليم']].map(([k,e,l]) => (
-              <div key={k} style={{ ...S.card, padding: isMobile ? 14 : 12, textAlign:'center', cursor:'pointer' }}
-                onClick={() => { setPreview(k); runDiag(k) }}>
-                <div style={{ fontSize: isMobile ? 28 : 22, marginBottom:5 }}>{e}</div>
-                <div style={{ fontSize: isMobile ? 11 : 10, color:'#A8DFC0', fontWeight:700 }}>{l}</div>
+        {/* ===== النتيجة ===== */}
+        {result && !loading && (
+          <div className="space-y-4">
+
+            {/* الصورة المفحوصة */}
+            {preview && (
+              <img src={preview} alt="الصورة المفحوصة" className="w-full max-h-52 object-cover rounded-2xl border border-emerald-800/60" />
+            )}
+
+            {/* ليست صورة نبات */}
+            {result.is_plant === false && (
+              <div className="rounded-2xl bg-amber-950/40 border border-amber-700/50 p-5 text-center space-y-2">
+                <span className="text-3xl">🤔</span>
+                <p className="text-amber-200 font-semibold">لم نتعرف على نبات في الصورة</p>
+                {result.notes && <p className="text-sm text-amber-200/70">{result.notes}</p>}
               </div>
-            ))}
-          </div>
-        </div>
+            )}
 
-        <div>
-          <div style={S.sec}>
-            <div style={{ width:3,height:14,background:'#38A05F',borderRadius:2 }}/>نتيجة التشخيص
-          </div>
-
-          {!result && !loading && (
-            <div style={{ display:'flex', flexDirection:'column', alignItems:'center',
-              justifyContent:'center', height: isMobile ? 150 : 200, color:'rgba(255,255,255,.2)' }}>
-              <div style={{ fontSize:44, marginBottom:12 }}>🔬</div>
-              <div>ارفع صورة لبدء التشخيص</div>
-            </div>
-          )}
-
-          {loading && (
-            <div style={{ textAlign:'center', padding:40 }}>
-              <div style={{ display:'flex', justifyContent:'center', gap:8, marginBottom:14 }}>
-                {[0,1,2].map(i => (
-                  <div key={i} style={{ width:10, height:10, background:'#38A05F',
-                    borderRadius:'50%', animation:`bounce .7s infinite`,
-                    animationDelay: i*.15+'s' }}/>
-                ))}
+            {/* نبات سليم */}
+            {result.is_plant !== false && result.healthy && (
+              <div className="rounded-2xl bg-emerald-950/60 border border-emerald-600/50 p-5 text-center space-y-2">
+                <span className="text-4xl">✅</span>
+                <p className="text-emerald-300 font-bold text-lg">
+                  {result.plant_name ? `${result.plant_name} — ` : ''}النبات سليم!
+                </p>
+                {result.notes && <p className="text-sm text-emerald-200/80">{result.notes}</p>}
               </div>
-              <div style={{ color:'#65C285', fontWeight:600 }}>جاري التحليل...</div>
-            </div>
-          )}
+            )}
 
-          {result && (
-            <div className="fade-in">
-              <div style={S.card}>
-                <div style={{ display:'inline-flex', alignItems:'center', gap:7,
-                  background:'rgba(0,0,0,.2)', borderRadius:8, padding:'4px 10px',
-                  fontSize:11, fontWeight:700, color:result.color,
-                  marginBottom:10, border:`1px solid ${result.color}40` }}>
-                  {result.badge}
-                </div>
-                <div style={{ fontSize: isMobile ? 14 : 15, fontWeight:800, marginBottom:12 }}>{result.name}</div>
-                <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                  <span style={{ fontSize:10, color:'#65C285', whiteSpace:'nowrap' }}>الدقة:</span>
-                  <div style={{ flex:1, height:7, background:'rgba(255,255,255,.08)',
-                    borderRadius:4, overflow:'hidden' }}>
-                    <div style={{ width:conf+'%', height:'100%',
-                      background:'linear-gradient(to left,#38A05F,#D4A832)',
-                      borderRadius:4, transition:'width .05s' }}/>
+            {/* نبات مصاب */}
+            {result.is_plant !== false && !result.healthy && (
+              <>
+                {/* تنبيه طارئ */}
+                {result.urgent && (
+                  <div className="rounded-xl bg-red-950/60 border border-red-500/60 p-3 flex items-center gap-2 animate-pulse">
+                    <span className="text-xl">🚨</span>
+                    <p className="text-red-300 text-sm font-semibold">حالة طارئة — يُنصح بالتدخل الفوري</p>
                   </div>
-                  <span style={{ fontSize:13, fontWeight:900, color:'#F0CC6A' }}>{conf}%</span>
-                </div>
-              </div>
+                )}
 
-              <div style={{ display:'grid',
-                gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
-                gap:10 }}>
-                <div style={S.card}>
-                  <div style={{ fontSize:10, fontWeight:700, color:'#65C285', marginBottom:8 }}>💊 خطة العلاج</div>
-                  {result.steps.map(s => (
-                    <div key={s} style={{ display:'flex', gap:6, marginBottom:6 }}>
-                      <div style={{ width:5, height:5, background:'#38A05F',
-                        borderRadius:'50%', marginTop:5, flexShrink:0 }}/>
-                      <span style={{ fontSize: isMobile ? 12 : 11, color:'rgba(255,255,255,.78)' }}>{s}</span>
+                {/* بطاقة المرض */}
+                <div className="rounded-2xl bg-[#16271a] border border-emerald-800/60 p-5 space-y-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      {result.plant_name && (
+                        <p className="text-xs text-emerald-200/60 mb-0.5">🌱 {result.plant_name}</p>
+                      )}
+                      <h2 className="text-xl font-bold text-emerald-100">{result.disease_ar}</h2>
+                      {result.disease_en && (
+                        <p className="text-xs text-emerald-200/50 mt-0.5" dir="ltr">{result.disease_en}</p>
+                      )}
                     </div>
-                  ))}
-                </div>
-                <div style={S.card}>
-                  <div style={{ fontSize:10, fontWeight:700, color:'#65C285', marginBottom:8 }}>💉 الأدوية</div>
-                  {result.meds.map(m => (
-                    <div key={m} style={{ background:'rgba(56,160,95,.15)',
-                      border:'1px solid rgba(56,160,95,.25)', color:'#65C285',
-                      fontSize:10, padding:'4px 10px', borderRadius:8,
-                      fontWeight:600, marginBottom:5, display:'inline-block', marginLeft:5 }}>
-                      {m}
-                    </div>
-                  ))}
-                </div>
-              </div>
+                    {result.severity && (
+                      <span className={`shrink-0 text-xs px-3 py-1 rounded-full border ${severityColor[result.severity] || severityColor['متوسطة']}`}>
+                        {result.severity}
+                      </span>
+                    )}
+                  </div>
 
-              <div style={{
-                marginTop: 12, padding: '10px 14px',
-                background: 'rgba(212,168,50,.1)',
-                border: '1px solid rgba(212,168,50,.35)',
-                borderRadius: 10, display: 'flex',
-                alignItems: 'flex-start', gap: 8
-              }}>
-                <span style={{ fontSize: 16 }}>⚠️</span>
-                <span style={{ fontSize: isMobile ? 12 : 11, color: '#F0CC6A', lineHeight: 1.7, fontWeight: 600 }}>
-                  تنبيه: هذا التشخيص للإرشاد فقط — استشر مهندساً زراعياً للتأكيد
-                </span>
-              </div>
-            </div>
-          )}
-        </div>
+                  {/* شريط نسبة الثقة */}
+                  {typeof result.confidence === 'number' && (
+                    <div>
+                      <div className="flex justify-between text-xs text-emerald-200/70 mb-1">
+                        <span>نسبة الثقة بالتشخيص</span>
+                        <span className="font-bold text-emerald-300">{result.confidence}%</span>
+                      </div>
+                      <div className="h-2 rounded-full bg-emerald-950 overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-l from-emerald-400 to-emerald-600 transition-all duration-700"
+                          style={{ width: `${result.confidence}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* الأعراض */}
+                {result.symptoms?.length > 0 && (
+                  <Section icon="🔍" title="الأعراض المكتشفة">
+                    <ul className="space-y-1.5">
+                      {result.symptoms.map((s, i) => (
+                        <li key={i} className="flex gap-2 text-sm text-emerald-100/90">
+                          <span className="text-emerald-500 shrink-0">•</span>{s}
+                        </li>
+                      ))}
+                    </ul>
+                  </Section>
+                )}
+
+                {/* الأسباب */}
+                {result.causes?.length > 0 && (
+                  <Section icon="❓" title="الأسباب المحتملة">
+                    <ul className="space-y-1.5">
+                      {result.causes.map((c, i) => (
+                        <li key={i} className="flex gap-2 text-sm text-emerald-100/90">
+                          <span className="text-emerald-500 shrink-0">•</span>{c}
+                        </li>
+                      ))}
+                    </ul>
+                  </Section>
+                )}
+
+                {/* خطة العلاج */}
+                {result.treatment?.length > 0 && (
+                  <Section icon="💊" title="خطة العلاج" highlight>
+                    <ol className="space-y-2.5">
+                      {result.treatment.map((t, i) => (
+                        <li key={i} className="flex gap-3 text-sm text-emerald-100">
+                          <span className="shrink-0 h-6 w-6 rounded-full bg-emerald-600/30 border border-emerald-500/50 flex items-center justify-center text-xs font-bold text-emerald-300">
+                            {i + 1}
+                          </span>
+                          <span className="pt-0.5">{t}</span>
+                        </li>
+                      ))}
+                    </ol>
+                  </Section>
+                )}
+
+                {/* الوقاية */}
+                {result.prevention?.length > 0 && (
+                  <Section icon="🛡️" title="الوقاية مستقبلاً">
+                    <ul className="space-y-1.5">
+                      {result.prevention.map((p, i) => (
+                        <li key={i} className="flex gap-2 text-sm text-emerald-100/90">
+                          <span className="text-emerald-500 shrink-0">•</span>{p}
+                        </li>
+                      ))}
+                    </ul>
+                  </Section>
+                )}
+
+                {/* ملاحظات */}
+                {result.notes && (
+                  <div className="rounded-xl bg-emerald-950/40 border border-emerald-800/40 p-3">
+                    <p className="text-xs text-emerald-200/70">💡 {result.notes}</p>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* زر تشخيص جديد */}
+            <button
+              onClick={reset}
+              className="w-full rounded-xl bg-emerald-600 hover:bg-emerald-500 transition text-white font-semibold py-3"
+            >
+              🔄 تشخيص صورة جديدة
+            </button>
+
+            <p className="text-center text-[11px] text-emerald-200/40">
+              التشخيص استرشادي بالذكاء الاصطناعي — للحالات الحرجة استشر مهندساً زراعياً
+            </p>
+          </div>
+        )}
       </div>
+    </div>
+  )
+}
+
+// بطاقة قسم قابلة لإعادة الاستخدام
+function Section({ icon, title, highlight, children }) {
+  return (
+    <div className={`rounded-2xl p-4 border ${
+      highlight
+        ? 'bg-emerald-900/30 border-emerald-600/50'
+        : 'bg-[#16271a] border-emerald-800/60'
+    }`}>
+      <h3 className="font-bold text-emerald-300 mb-3 flex items-center gap-2">
+        <span>{icon}</span>{title}
+      </h3>
+      {children}
     </div>
   )
 }
