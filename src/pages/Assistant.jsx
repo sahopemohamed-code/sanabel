@@ -137,7 +137,7 @@ export default function Assistant({ showNotif }) {
             onKeyDown={(e) => e.key === 'Enter' && send()}
             placeholder="اسألني عن زراعتك..."
             className="flex-1 min-w-0 rounded-xl bg-[#13231a] border border-emerald-700/40
-                       px-4 py-3 text-sm text-emerald-50 placeholder:text-emerald-200/40
+                       px-4 py-3 text-base text-emerald-50 placeholder:text-emerald-200/40
                        focus:outline-none focus:border-emerald-500"
           />
           <button
