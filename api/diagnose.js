@@ -62,7 +62,7 @@ export default async function handler(req) {
     return jsonResponse({ error: 'الطريقة غير مدعومة، استخدم POST' }, 405);
   }
 
-  const API_KEY = process.env.GEMINI_API_KEY;
+  const API_KEY = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_KEY;
   if (!API_KEY) {
     return jsonResponse({ error: 'مفتاح API غير مُعرّف في إعدادات الخادم' }, 500);
   }
