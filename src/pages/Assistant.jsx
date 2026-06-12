@@ -1,128 +1,155 @@
 import { useState, useRef, useEffect } from 'react'
 import { askAssistant } from '../lib/api'
 
-const QUICK = ['ما أعراض صدأ الحنطة؟','متى أحصد الطماطم؟','كيف أوفر مياه الري؟','ما أفضل سماد للحنطة؟']
+// ============================================================
+// سنابل — المساعد الزراعي الذكي (واجهة موبايل أولاً)
+// مبنية بنفس أسلوب صفحة التشخيص — مرنة لكل أحجام الشاشات
+// ============================================================
+
+const QUICK = [
+  'ما أعراض صدأ الحنطة؟',
+  'متى أزرع الطماطم؟',
+  'كيف أوفر مياه الري؟',
+  'نخلتي عليها مادة دبقة، شنو الحل؟',
+]
 
 export default function Assistant({ showNotif }) {
-  const [msgs, setMsgs]    = useState([{r:'bot',t:'مرحباً! 🌾 أنا مساعدك الزراعي الذكي.\n\nاسألني عن زراعتك — المحاصيل، الأمراض، الري، التسميد!'}])
-  const [inp,  setInp]     = useState('')
-  const [loading, setLoad] = useState(false)
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024)
+  const [msgs, setMsgs] = useState([
+    { r: 'bot', t: 'مرحباً! 🌾 أنا مساعدك الزراعي الذكي.\n\nاسألني عن زراعتك — المحاصيل، الأمراض، الري، التسميد!' },
+  ])
+  const [inp, setInp] = useState('')
+  const [loading, setLoading] = useState(false)
   const endRef = useRef(null)
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 1024)
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
-
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior:'smooth' }) }, [msgs])
+    endRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [msgs, loading])
 
   const send = async (text) => {
-    const msg = text || inp.trim()
+    const msg = (text || inp).trim()
     if (!msg || loading) return
     setInp('')
-    setMsgs(m => [...m, { r:'user', t:msg }])
-    setLoad(true)
+    setMsgs((m) => [...m, { r: 'user', t: msg }])
+    setLoading(true)
     try {
-      const history = msgs.map(m => ({ role: m.r==='bot'?'assistant':'user', content: m.t }))
+      const history = msgs.map((m) => ({
+        role: m.r === 'bot' ? 'assistant' : 'user',
+        content: m.t,
+      }))
       const res = await askAssistant(msg, history)
-      setMsgs(m => [...m, { r:'bot', t: res.success ? res.message : 'عذراً، حدث خطأ. حاول مرة أخرى.' }])
+      setMsgs((m) => [
+        ...m,
+        { r: 'bot', t: res.success ? res.message : 'عذراً، حدث خطأ. حاول مرة أخرى.' },
+      ])
     } catch {
-      setMsgs(m => [...m, { r:'bot', t:'حدث خطأ، يرجى المحاولة مجدداً.' }])
+      setMsgs((m) => [...m, { r: 'bot', t: 'حدث خطأ، يرجى المحاولة مجدداً.' }])
     } finally {
-      setLoad(false)
+      setLoading(false)
     }
   }
 
   return (
-    <div style={{
-      padding: isMobile ? '12px 12px 8px' : '24px 24px 20px',
-      display:'flex', flexDirection:'column',
-      height: isMobile ? 'calc(100vh - 116px)' : 'calc(100vh - 60px)'
-    }}>
-      <div style={{ marginBottom:10 }}>
-        <div style={{ fontSize: isMobile ? 18 : 22, fontWeight:700, color:'#A8DFC0' }}>المساعد الذكي 🤖</div>
-        <div style={{ fontSize:12, color:'#65C285', opacity:.6, marginTop:4 }}>اسألني بالعربية أو العامية العراقية</div>
-      </div>
+    <div
+      dir="rtl"
+      className="flex flex-col bg-[#0d1a0f] text-emerald-50
+                 h-[calc(100dvh-116px)] lg:h-[calc(100dvh-60px)]
+                 px-3 pt-3 pb-2 lg:px-6 lg:pt-5"
+    >
+      <div className="flex flex-col flex-1 min-h-0 w-full max-w-2xl mx-auto">
 
-      <div style={{ display:'flex', gap:7, marginBottom:10,
-        overflowX: isMobile ? 'auto' : 'visible',
-        flexWrap: isMobile ? 'nowrap' : 'wrap',
-        paddingBottom: isMobile ? 4 : 0 }}>
-        {QUICK.map(q => (
-          <button key={q} onClick={() => send(q)}
-            style={{ background:'rgba(19,42,26,.6)', border:'1px solid rgba(101,194,133,.15)',
-              borderRadius:10, padding: isMobile ? '8px 12px' : '6px 12px',
-              fontSize: isMobile ? 12 : 11, color:'#65C285',
-              fontFamily:'Tajawal,sans-serif', cursor:'pointer',
-              whiteSpace:'nowrap', flexShrink:0 }}>
-            {q}
+        {/* ===== العنوان ===== */}
+        <header className="mb-2.5 shrink-0">
+          <h1 className="text-lg lg:text-xl font-bold text-emerald-300">المساعد الذكي 🤖</h1>
+          <p className="text-xs text-emerald-200/50 mt-0.5">اسألني بالعربية أو العامية العراقية</p>
+        </header>
+
+        {/* ===== أسئلة سريعة ===== */}
+        <div className="flex gap-2 mb-2.5 overflow-x-auto pb-1 shrink-0 scrollbar-none">
+          {QUICK.map((q) => (
+            <button
+              key={q}
+              onClick={() => send(q)}
+              disabled={loading}
+              className="shrink-0 whitespace-nowrap rounded-xl border border-emerald-700/30
+                         bg-[#13231a] px-3 py-2 text-xs text-emerald-300
+                         active:scale-95 transition disabled:opacity-50"
+            >
+              {q}
+            </button>
+          ))}
+        </div>
+
+        {/* ===== منطقة المحادثة ===== */}
+        <div className="flex-1 min-h-0 overflow-y-auto rounded-2xl
+                        bg-[#13231a]/60 border border-emerald-800/40 p-3 lg:p-4">
+          {msgs.map((m, i) => (
+            <div
+              key={i}
+              className={`flex items-start gap-2 mb-3 ${m.r === 'user' ? 'flex-row-reverse' : ''}`}
+            >
+              {/* الصورة الرمزية */}
+              <div
+                className={`shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-base
+                  ${m.r === 'bot' ? 'bg-emerald-900' : 'bg-emerald-600'}`}
+              >
+                {m.r === 'bot' ? '🌾' : '👨‍🌾'}
+              </div>
+
+              {/* فقاعة الرسالة */}
+              <div
+                className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed whitespace-pre-wrap
+                  ${m.r === 'bot'
+                    ? 'bg-[#16271a] border border-emerald-800/40 text-emerald-50/90 rounded-tr-md'
+                    : 'bg-emerald-600/25 border border-emerald-500/30 text-emerald-100 rounded-tl-md'
+                  }`}
+              >
+                {m.t}
+              </div>
+            </div>
+          ))}
+
+          {/* مؤشر "يكتب..." */}
+          {loading && (
+            <div className="flex items-start gap-2 mb-3">
+              <div className="shrink-0 h-8 w-8 rounded-full bg-emerald-900 flex items-center justify-center text-base">
+                🌾
+              </div>
+              <div className="rounded-2xl rounded-tr-md bg-[#16271a] border border-emerald-800/40 px-4 py-3 flex gap-1.5 items-center">
+                {[0, 150, 300].map((delay) => (
+                  <span
+                    key={delay}
+                    className="h-2 w-2 rounded-full bg-emerald-500 animate-bounce"
+                    style={{ animationDelay: `${delay}ms` }}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div ref={endRef} />
+        </div>
+
+        {/* ===== خانة الكتابة ===== */}
+        <div className="flex gap-2 mt-2.5 shrink-0">
+          <input
+            value={inp}
+            onChange={(e) => setInp(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && send()}
+            placeholder="اسألني عن زراعتك..."
+            className="flex-1 min-w-0 rounded-xl bg-[#13231a] border border-emerald-700/40
+                       px-4 py-3 text-sm text-emerald-50 placeholder:text-emerald-200/40
+                       focus:outline-none focus:border-emerald-500"
+          />
+          <button
+            onClick={() => send()}
+            disabled={loading || !inp.trim()}
+            className="shrink-0 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700
+                       px-5 py-3 text-sm font-bold text-white
+                       active:scale-95 transition disabled:opacity-40"
+          >
+            إرسال
           </button>
-        ))}
-      </div>
-
-      <div style={{ flex:1, overflow:'auto', background:'rgba(19,42,26,.5)',
-        border:'1px solid rgba(101,194,133,.1)', borderRadius:16,
-        padding: isMobile ? 12 : 16,
-        marginBottom:10, display:'flex', flexDirection:'column', gap:0 }}>
-        {msgs.map((m,i) => (
-          <div key={i} style={{ display:'flex', gap:8, alignItems:'flex-start',
-            marginBottom:12, flexDirection: m.r==='user'?'row-reverse':'row' }}>
-            <div style={{ width: isMobile ? 32 : 28, height: isMobile ? 32 : 28,
-              borderRadius:'50%',
-              background: m.r==='bot'?'#1e5c38':'#38A05F',
-              display:'flex', alignItems:'center', justifyContent:'center',
-              fontSize: isMobile ? 15 : 13, flexShrink:0 }}>
-              {m.r==='bot'?'🌾':'👨‍🌾'}
-            </div>
-            <div style={{ maxWidth:'85%', padding: isMobile ? '11px 14px' : '10px 13px',
-              borderRadius:14, fontSize: isMobile ? 13 : 12,
-              lineHeight:1.7, whiteSpace:'pre-wrap',
-              background: m.r==='bot'?'rgba(19,42,26,.8)':'rgba(56,160,95,.2)',
-              border: m.r==='bot'?'1px solid rgba(101,194,133,.13)':'1px solid rgba(56,160,95,.28)',
-              color: m.r==='bot'?'rgba(255,255,255,.85)':'#A8DFC0',
-              borderTopRightRadius: m.r==='bot'?4:14,
-              borderTopLeftRadius:  m.r==='user'?4:14 }}>
-              {m.t}
-            </div>
-          </div>
-        ))}
-
-        {loading && (
-          <div style={{ display:'flex', gap:8, marginBottom:12 }}>
-            <div style={{ width:28,height:28,borderRadius:'50%',background:'#1e5c38',
-              display:'flex',alignItems:'center',justifyContent:'center',fontSize:13 }}>🌾</div>
-            <div style={{ background:'rgba(19,42,26,.8)',border:'1px solid rgba(101,194,133,.13)',
-              padding:'10px 13px',borderRadius:14,display:'flex',gap:6,alignItems:'center' }}>
-              {[0,1,2].map(i => (
-                <div key={i} style={{ width:8,height:8,background:'#38A05F',borderRadius:'50%',
-                  animation:'bounce .7s infinite', animationDelay: i*.15+'s' }}/>
-              ))}
-            </div>
-          </div>
-        )}
-        <div ref={endRef}/>
-      </div>
-
-      <div style={{ display:'flex', gap:8 }}>
-        <input value={inp} onChange={e=>setInp(e.target.value)}
-          onKeyDown={e=>e.key==='Enter'&&send()}
-          placeholder="اسألني عن زراعتك..."
-          style={{ flex:1, background:'rgba(19,42,26,.7)',
-            border:'1px solid rgba(101,194,133,.18)', borderRadius:11,
-            padding: isMobile ? '12px 14px' : '10px 13px',
-            fontFamily:'Tajawal,sans-serif',
-            fontSize: isMobile ? 14 : 13, color:'#fff', outline:'none' }}/>
-        <button onClick={()=>send()} disabled={loading||!inp.trim()}
-          style={{ background:'linear-gradient(135deg,#38A05F,#2A6E47)', color:'#fff',
-            border:'none', borderRadius:11,
-            padding: isMobile ? '12px 18px' : '10px 20px',
-            fontFamily:'Tajawal,sans-serif',
-            fontSize: isMobile ? 14 : 13, fontWeight:700,
-            cursor:'pointer', opacity: loading||!inp.trim()?0.5:1 }}>
-          إرسال
-        </button>
+        </div>
       </div>
     </div>
   )
