@@ -1,26 +1,49 @@
 import axios from 'axios'
 
-const ROBOFLOW_KEY   = import.meta.env.VITE_ROBOFLOW_KEY
-const ROBOFLOW_WS    = import.meta.env.VITE_ROBOFLOW_WORKSPACE
-const ROBOFLOW_MODEL = import.meta.env.VITE_ROBOFLOW_MODEL
-const ROBOFLOW_VER   = import.meta.env.VITE_ROBOFLOW_VERSION
-const WEATHER_KEY    = import.meta.env.VITE_OPENWEATHER_KEY
+const WEATHER_KEY = import.meta.env.VITE_OPENWEATHER_KEY
 
-export async function diagnosePlant(imageBase64) {
+// ============================================================
+// تشخيص أمراض النباتات — النظام الجديد عبر Gemini Vision
+// نفس اسم الدالة القديمة حتى تبقى متوافقة مع كل الصفحات
+// options اختيارية: { cropType: 'طماطة', province: 'الأنبار' }
+// ============================================================
+export async function diagnosePlant(imageBase64, options = {}) {
   try {
-    const res = await axios({
+    // إزالة بادئة data URL إن وجدت (data:image/jpeg;base64,...)
+    const cleanBase64 = imageBase64.includes(',')
+      ? imageBase64.split(',')[1]
+      : imageBase64
+
+    const res = await fetch('/api/diagnose', {
       method: 'POST',
-      url: `https://detect.roboflow.com/${ROBOFLOW_MODEL}/${ROBOFLOW_VER}`,
-      params: { api_key: ROBOFLOW_KEY },
-      data: imageBase64,
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        image: cleanBase64,
+        mimeType: 'image/jpeg',
+        cropType: options.cropType || '',
+        province: options.province || ''
+      })
     })
-    return { success: true, data: res.data }
+
+    const data = await res.json()
+
+    if (!res.ok || !data.success) {
+      return { success: false, error: data.error || 'فشل التشخيص، حاول مرة أخرى' }
+    }
+
+    // data.diagnosis يحتوي:
+    // is_plant, healthy, plant_name, disease_ar, disease_en,
+    // confidence, severity, symptoms[], causes[], treatment[],
+    // prevention[], urgent, notes
+    return { success: true, data: data.diagnosis }
   } catch (e) {
     return { success: false, error: e.message }
   }
 }
 
+// ============================================================
+// الطقس — بدون تغيير
+// ============================================================
 export async function getWeather(lat = 32.5, lon = 44.4) {
   try {
     const res = await axios.get(
@@ -43,6 +66,9 @@ export async function getWeather(lat = 32.5, lon = 44.4) {
   }
 }
 
+// ============================================================
+// المساعد الذكي — بدون تغيير
+// ============================================================
 export async function askAssistant(message, history = []) {
   try {
     const res = await fetch('/api/chat', {
@@ -67,6 +93,9 @@ export async function askAssistant(message, history = []) {
   }
 }
 
+// ============================================================
+// حاسبة الري — بدون تغيير
+// ============================================================
 export function calculateIrrigation({ cropType, area, soilType, season, stage }) {
   const base = { 'حنطة':3.5,'طماطم':5.5,'خيار':6,'نخيل':4,'شعير':3,'ذرة':5,'باذنجان':4.5,'بطاطا':4.8,'بصل':4.2,'فلفل':5.2,'رقي':5.8,'بطيخ':5.6,'تفاح':3.8,'رمان':3.5,'عنب':4.2,'تين':3.2,'مشمش':3.6,'برتقال':4.0,'ليمون':3.8,'فراولة':6.2,'فلفل حار':5.0,'كوسا':5.5,'لوبياء':4.5,'بازلاء':3.8,'عدس':2.8,'حمص':2.5,'سمسم':2.2,'زيتون':2.8,'قطن':4.5 }
   const sm   = { 'طمي':1,'طينية':.8,'رملية':1.3 }
