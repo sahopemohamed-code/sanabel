@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 
 const NAV = [
   { id:'dashboard',  icon:'🏠', label:'لوحة التحكم' },
+  { id:'profile',    icon:'👤', label:'ملفي الشخصي' },
   { id:'diagnosis',  icon:'🔬', label:'تشخيص الأمراض' },
   { id:'irrigation', icon:'💧', label:'نظام الري' },
   { id:'market',     icon:'🛒', label:'السوق الزراعي' },
@@ -54,10 +55,10 @@ export default function Sidebar({ currentPage, onNavigate }) {
           <span style={{ fontSize:20 }}>🌾</span>
           <div style={{ fontFamily:'Amiri,serif', fontSize:18, color:'#A8DFC0', fontWeight:700 }}>سنابل</div>
         </div>
-        <button onClick={() => supabase.auth.signOut()}
-          style={{ background:'none', border:'none', color:'rgba(248,113,113,.6)',
-            cursor:'pointer', fontFamily:'Tajawal,sans-serif', fontSize:11 }}>
-          خروج
+        <button onClick={() => onNavigate('profile')}
+          style={{ background:'none', border:'none', color:'#65C285',
+            cursor:'pointer', fontSize:22 }}>
+          👤
         </button>
       </div>
 

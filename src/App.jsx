@@ -11,6 +11,7 @@ import Community from './pages/Community'
 import Assistant from './pages/Assistant'
 import Auth from './pages/Auth'
 import ExpertDashboard from './pages/ExpertDashboard'
+import Profile from './pages/Profile'
 
 export default function App() {
   const [page, setPage]         = useState('dashboard')
@@ -69,6 +70,7 @@ export default function App() {
     dashboard:  isExpert
                   ? <ExpertDashboard user={user} showNotif={showNotif} />
                   : <Dashboard showNotif={showNotif} />,
+    profile:    <Profile showNotif={showNotif} />,
     diagnosis:  <Diagnosis  showNotif={showNotif} />,
     irrigation: <Irrigation showNotif={showNotif} />,
     market:     <Market     showNotif={showNotif} />,
